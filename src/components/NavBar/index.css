@@ -1,0 +1,24 @@
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 40px;
+  padding: 10px 20px;
+  background-color: #111111;
+  color: #ffffff;
+}
+
+.logo {
+}
+
+.routes {
+}
+
+.profile {
+}
+
+.account {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
