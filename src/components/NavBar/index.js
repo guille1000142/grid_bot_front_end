@@ -1,17 +1,16 @@
-import { Button, ToggleButtonGroup, ToggleButton, Chip } from "@mui/material";
+import { Button, Chip } from "@mui/material";
 import {
   FiberManualRecordRounded,
   ExitToAppRounded,
 } from "@mui/icons-material";
+
 import { useNavigate, useLocation } from "react-router-dom";
 import { useMatchMedia } from "../../hooks/useMatchMedia";
 import useWeb3 from "../../hooks/useWeb3";
 
-import "./index.css";
-
 export default function NavBar() {
-  const isMobileResolution = useMatchMedia("(max-width:500px)", false);
-  let location = useLocation();
+  // const isMobileResolution = useMatchMedia("(max-width:500px)", false);
+  // let location = useLocation();
   let navigate = useNavigate();
   const { account, network, connectWallet } = useWeb3();
 
@@ -20,7 +19,7 @@ export default function NavBar() {
   };
 
   return (
-    <div className="navbar">
+    <>
       <div className="logo">
         <h2>GRID BOT</h2>
       </div>
@@ -64,36 +63,38 @@ export default function NavBar() {
         </div>
       )} */}
 
-      <div className="profile">
+      <div>
         {account ? (
           <Chip
-            sx={{
-              color: "#ffffff",
-              backgroundColor: "#2c2c2c49",
-              padding: "20px 5px",
-              fontSize: "14px",
-            }}
+            // sx={{
+            //   color: "#ffffff",
+
+            //   padding: "16px 5px",
+            //   fontSize: "14px",
+            //   "& .MuiChip-root": {
+            //     backgroundColor: "#000000",
+            //   },
+            // }}
             deleteIcon={<FiberManualRecordRounded />}
-            color="primary"
             label={
-              <div className="account">
+              <div id="account">
                 <FiberManualRecordRounded
                   sx={{
                     fontSize: "14px",
                     color: "#00ff00",
-                    marginRight: "6px",
                   }}
                 />
+
                 <span>
                   {account.substring(0, 5) + "..." + account.substring(38, 42)}
                 </span>
+
                 <ExitToAppRounded
                   onClick={() => connectWallet({ change: true })}
                   sx={{
                     cursor: "pointer",
-                    fontSize: "22px",
+                    fontSize: "20px",
                     color: "#ff0000",
-                    marginLeft: "6px",
                   }}
                 />
               </div>
@@ -109,6 +110,6 @@ export default function NavBar() {
           </Button>
         )}
       </div>
-    </div>
+    </>
   );
 }

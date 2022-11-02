@@ -1,21 +1,76 @@
 import React, { useEffect } from "react";
 import { toast, ToastBar, Toaster, useToasterStore } from "react-hot-toast";
+import {
+  ThemeProvider,
+  createTheme,
+  experimental_sx as sx,
+} from "@mui/material/styles";
 import { Outlet } from "react-router-dom";
 import NavBar from "../NavBar";
+import LeftPanel from "../LeftPanel";
+import RightPanel from "../RightPanel";
+import BottomPanel from "../BottomPanel";
 
-export function GlobalLayout() {
+const theme = createTheme({
+  palette: {
+    mode: "dark",
+  },
+  components: {
+    MuiChip: {
+      styleOverrides: {
+        root: sx({
+          color: "#ffffff",
+          backgroundColor: "#000000",
+          borderRadius: "5px",
+          fontSize: "14px",
+          py: "18px",
+        }),
+        label: sx({
+          padding: "10px",
+        }),
+      },
+    },
+    MuiListItemText: {
+      styleOverrides: {
+        secondary: sx({
+          color: "#ffffff",
+        }),
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: sx({
+          bgcolor: "transparent",
+          background: "transparent",
+          boxShadow: 0,
+        }),
+      },
+    },
+  },
+});
+
+export default function Layout() {
   return (
-    <>
-      <ToastModal />
-      <header>
-        <NavBar />
-      </header>
-      <main>
-        <section>
+    <ThemeProvider theme={theme}>
+      <div className="grid-container">
+        {/* <ToastModal /> */}
+        <header className="header">
+          <NavBar />
+        </header>
+        <nav className="nav">
+          <LeftPanel />
+        </nav>
+        <section className="section">
           <Outlet />
         </section>
-      </main>
-    </>
+        <article className="article">
+          <BottomPanel />
+        </article>
+        <aside className="aside">
+          <RightPanel />
+        </aside>
+      </div>
+    </ThemeProvider>
   );
 }
 
