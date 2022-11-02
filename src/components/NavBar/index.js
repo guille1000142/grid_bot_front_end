@@ -1,18 +1,15 @@
-import { Button, Chip } from "@mui/material";
+import { Button, Chip, Tabs, Tab } from "@mui/material";
 import {
   FiberManualRecordRounded,
   ExitToAppRounded,
 } from "@mui/icons-material";
-
+import useMediaQuery from "@mui/material/useMediaQuery";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useMatchMedia } from "../../hooks/useMatchMedia";
-import useWeb3 from "../../hooks/useWeb3";
 
-export default function NavBar() {
-  // const isMobileResolution = useMatchMedia("(max-width:500px)", false);
-  // let location = useLocation();
+export default function NavBar({ account, connectWallet }) {
+  let location = useLocation();
   let navigate = useNavigate();
-  const { account, network, connectWallet } = useWeb3();
+  const resolution = useMediaQuery("(min-width:600px)");
 
   const handleChange = (event, value) => {
     navigate(value);
@@ -20,48 +17,20 @@ export default function NavBar() {
 
   return (
     <>
-      <div className="logo">
+      <div>
         <h2>GRID BOT</h2>
       </div>
 
-      {/* {isMobileResolution ? (
-        <div></div>
-      ) : (
-        <div className="routes">
-          <ToggleButtonGroup
-            color="primary"
-            value={location.pathname}
-            exclusive
-            onChange={handleChange}
-            aria-label="nav"
-          >
-            <ToggleButton
-              sx={{
-                color: "#ffffff",
-                width: "70px",
-                "&:hover": {
-                  backgroundColor: "#2c2c2c49",
-                },
-              }}
-              value="/"
-            >
-              Home
-            </ToggleButton>
-            <ToggleButton
-              sx={{
-                color: "#ffffff",
-                width: "70px",
-                "&:hover": {
-                  backgroundColor: "#2c2c2c49",
-                },
-              }}
-              value="/dashboard"
-            >
-              Dashboard
-            </ToggleButton>
-          </ToggleButtonGroup>
-        </div>
-      )} */}
+      <div>
+        <Tabs
+          onChange={handleChange}
+          value={location.pathname}
+          aria-label="Tabs where each tab needs to be selected manually"
+        >
+          <Tab label="TRADE" value="/trade" />
+          <Tab label="MARKET" value="/marketplace" />
+        </Tabs>
+      </div>
 
       <div>
         {account ? (

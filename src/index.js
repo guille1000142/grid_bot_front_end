@@ -1,23 +1,24 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { Route, Routes, BrowserRouter, Navigate } from "react-router-dom";
-import Layout from "./components/Layout";
-import "./index.css";
-// import Home from "./views/Home";
-import Dashboard from "./views/Dashboard";
+import { ThemeProvider } from "@mui/material/styles";
+import Trade from "./views/Trade";
+import Marketplace from "./views/Marketplace";
 import reportWebVitals from "./reportWebVitals";
+import { theme } from "./hooks/theme";
+import "./index.css";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
-  <BrowserRouter>
-    <Routes>
-      <Route exact path="/" element={<Layout />}>
-        <Route index element={<Dashboard />} />
-        {/* <Route path="/dashboard" element={<Dashboard />} /> */}
-        <Route path="*" element={<Navigate replace to="/" />} />
-      </Route>
-    </Routes>
-  </BrowserRouter>
+  <ThemeProvider theme={theme}>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/trade" element={<Trade />} />
+        <Route path="/marketplace" element={<Marketplace />} />
+        <Route path="*" element={<Navigate replace to="/trade" />} />
+      </Routes>
+    </BrowserRouter>
+  </ThemeProvider>
 );
 
 reportWebVitals();

@@ -1,5 +1,5 @@
-import { NFTStorage } from "nft.storage";
 import { useState } from "react";
+import { NFTStorage } from "nft.storage";
 
 const client = new NFTStorage({
   token: process.env.REACT_APP_NFT_STORAGE_KEY,
@@ -7,43 +7,75 @@ const client = new NFTStorage({
 
 export default function useMinter() {
   const [image, setImage] = useState("");
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [pair, setPair] = useState("");
-  const [mint, setMint] = useState({ state: "MINT NFT BOT", data: false });
+  const [input, setInput] = useState({
+    name: "",
+    description: "",
+    pair: "",
+    buyPrice: "",
+    sellPrice: "",
+  });
+  const [state, setState] = useState("MINT NFT BOT");
 
-  const uploadNft = async () => {
-    setMint({ state: "MINTING...", data: false });
-    const metadata = await client.store({
-      name: name,
-      description: description,
-      image: image,
-    });
-    mintNft(metadata);
-  };
-
-  const mintNft = (metadata) => {
-    const preview = document.querySelector("#preview-photo");
-    preview.src = "reader.result";
-    preview.style.visibility = "hidden";
-    setImage("");
-    setName("");
-    setDescription("");
-    setPair("");
-    setMint({ state: "MINT NFT BOT", data: metadata });
+  const mintBot = async ({ web3, account, contract }) => {
+    setState("MINTING...");
+    client
+      .store({
+        name: input.name,
+        description: input.description,
+        image: image,
+      })
+      .then((metadata) => {
+        contract.gridBotFactory.methods
+          .factoryNewGrid(
+            metadata.url,
+            input.pair,
+            input.buyPrice,
+            input.sellPrice,
+            account
+          )
+          .send({
+            from: account,
+            value: web3.quickNode.utils.toWei("0.001", "ether"),
+            // gasPrice: web3.utils.toWei(gas.fastest.toString(), "gwei"),
+            // gasLimit: 500000,
+          })
+          .on("receipt", (receipt) => {
+            const preview = document.querySelector("#preview-photo");
+            preview.src = "reader.result";
+            preview.style.visibility = "hidden";
+            setImage("");
+            setInput({
+              name: "",
+              description: "",
+              pair: "",
+              buyPrice: "",
+              sellPrice: "",
+            });
+            setState("MINT NFT BOT");
+          })
+          .on("error", (err, receipt) => {
+            if (err.code === -32603) {
+              console.error("This transaction needs more gas to be executed");
+              return false;
+            }
+            if (err.code === 4001) {
+              console.error("Denied transaction signature");
+              return false;
+            }
+            if (!err.code) {
+              console.error("Transaction reverted");
+              return false;
+            }
+          });
+      });
   };
 
   return {
     image,
     setImage,
-    name,
-    setName,
-    description,
-    setDescription,
-    pair,
-    setPair,
-    mint,
-    setMint,
-    uploadNft,
+    input,
+    setInput,
+    state,
+    mintBot,
   };
 }

@@ -1,14 +1,9 @@
 import { useEffect, useState } from "react";
 import Web3 from "web3";
 import toast from "react-hot-toast";
-// import UniswapRouter from "../abis/RouterPolygon/IUniswapV2Router02.json";
-// import ParnerAbi from "../abis/PartnerContract/PartnerContract.json";
-// import {
-//   pMaticAddress,
-//   pUsdcAddress,
-//   pRouterAddress,
-//   pPartnerAddress,
-// } from "../utils/address";
+import GridBotFactoryAbi from "../abis/mumbai/GridBotFactory.json";
+import NFTGridDataAbi from "../abis/mumbai/NFTGridData.json";
+import { GridBotFactoryAddress, NFTGridDataAddress } from "../utils/address";
 
 export default function useWeb3() {
   const [maticPrice, setMaticPrice] = useState(false);
@@ -20,35 +15,28 @@ export default function useWeb3() {
 
   useEffect(() => {
     // QUICKNODE RPC
-    const privateProvider = `wss://${process.env.REACT_APP_QUICKNODE_RPC}`;
-    const privateWeb3 = new Web3(
-      new Web3.providers.WebsocketProvider(privateProvider)
+    const quickNodeProvider = `wss://${process.env.REACT_APP_QUICKNODE_RPC}`;
+    const quickNode = new Web3(
+      new Web3.providers.WebsocketProvider(quickNodeProvider)
     );
-
-    // const polygonSwapContract = new privateWeb3.eth.Contract(
-    //   UniswapRouter.abi,
-    //   pRouterAddress
-    // );
-
-    // polygonSwapContract.methods
-    //   .getAmountsOut("1000000000000000000", [pMaticAddress, pUsdcAddress])
-    //   .call()
-    //   .then((price) =>
-    //     setMaticPrice(parseFloat((parseInt(price[1]) / 1000000).toFixed(4)))
-    //   )
-    //   .catch((err) => console.log(err));
 
     // METAMASK WALLET
 
     if (typeof window.ethereum !== "undefined") {
-      const metamaskWeb3 = new Web3(window.ethereum);
-      setWeb3(metamaskWeb3);
+      const metamask = new Web3(window.ethereum);
+      setWeb3({ quickNode, metamask });
 
-      // const partnerContract = new metamaskWeb3.eth.Contract(
-      //   ParnerAbi,
-      //   pPartnerAddress
-      // );
-      // setContract(partnerContract);
+      const gridBotFactory = new metamask.eth.Contract(
+        JSON.parse(GridBotFactoryAbi.result),
+        GridBotFactoryAddress
+      );
+
+      const nftGridData = new metamask.eth.Contract(
+        JSON.parse(NFTGridDataAbi.result),
+        NFTGridDataAddress
+      );
+
+      setContract({ gridBotFactory, nftGridData });
 
       window.ethereum
         .request({ method: "eth_accounts" })
@@ -101,11 +89,11 @@ export default function useWeb3() {
       .catch((err) => console.log(err));
   };
 
-  useEffect(() => {
-    if (web3 && account && network !== "") {
-      readBalance();
-    }
-  }, [account, network, web3]);
+  // useEffect(() => {
+  //   if (web3 && account && network !== "") {
+  //     readBalance();
+  //   }
+  // }, [account, network, web3]);
 
   const connectWallet = (change) => {
     if (typeof window.ethereum === "undefined") {

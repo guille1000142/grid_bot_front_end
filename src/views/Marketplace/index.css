@@ -1,0 +1,51 @@
+.marketplace-grid-container > * {
+  box-shadow: -1px 1px 7px 0px rgba(0, 0, 0, 0.75);
+  border-radius: 4px;
+}
+
+.marketplace-grid-container {
+  display: grid;
+  gap: 5px;
+  grid-template:
+    "header" 50px
+    "section" 900px;
+}
+
+.header {
+  grid-area: header;
+  background-color: #0c163a;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 10px;
+}
+
+.nav {
+  grid-area: nav;
+  background-color: #0c163a;
+  overflow-y: auto;
+}
+
+.section {
+  grid-area: section;
+  background-color: #0c163a;
+}
+
+.article {
+  grid-area: article;
+  background-color: #0c163a;
+}
+
+.aside {
+  grid-area: aside;
+  background-color: #0c163a;
+}
+
+/* HEADER */
+
+#account {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}

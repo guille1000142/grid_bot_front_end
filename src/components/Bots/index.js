@@ -12,33 +12,20 @@ import {
   TextField,
   FormControl,
   InputLabel,
-  InputAdornment,
-  Input,
   Select,
   MenuItem,
   Link,
   Alert,
   Collapse,
 } from "@mui/material";
-import { ImageAspectRatioRounded } from "@mui/icons-material";
-import { PhotoCamera, CloseOutlined, InputA } from "@mui/icons-material";
+import { PhotoCamera, CloseOutlined } from "@mui/icons-material";
 import useMinter from "../../hooks/useMinter";
+import useNFTStorage from "../../hooks/useNFTStorage";
+import { WalletWarning } from "../WalletWarning";
 
-const CreateBot = () => {
-  const [error, setError] = useState(false);
-  const {
-    image,
-    setImage,
-    name,
-    setName,
-    description,
-    setDescription,
-    pair,
-    setPair,
-    mint,
-    setMint,
-    uploadNft,
-  } = useMinter();
+const CreateBot = ({ account, network, contract, web3 }) => {
+  const [error, setError] = useState({ field: false, account: false });
+  const { image, setImage, input, setInput, state, mintBot } = useMinter();
 
   useEffect(() => {
     const iconButton = document.querySelector("#icon");
@@ -71,6 +58,7 @@ const CreateBot = () => {
     const file = document.querySelector("#input-photo").files[0];
     const preview = document.querySelector("#preview-photo");
     const reader = new FileReader();
+
     reader.addEventListener("load", () => {
       preview.src = reader.result;
       preview.style.visibility = "visible";
@@ -82,25 +70,32 @@ const CreateBot = () => {
     }
   };
 
-  const handleName = (event) => {
-    setName(event.target.value);
-  };
-
-  const handleDescription = (event) => {
-    setDescription(event.target.value);
-  };
-
-  const handlePair = (event, value) => {
-    setPair(value.props.value);
+  const handleChange = (e) => {
+    setInput({
+      ...input,
+      [e.target.name]: e.target.value,
+    });
   };
 
   const verifyData = () => {
-    if (!image || name === "" || description === "" || pair === "") {
-      setError(true);
+    if (!account) {
+      setError({ field: false, account: true });
       return false;
     }
 
-    uploadNft();
+    if (
+      !image ||
+      input.name === "" ||
+      input.description === "" ||
+      input.pair === "" ||
+      input.buyPrice === "" ||
+      input.sellPrice === ""
+    ) {
+      setError({ field: true, account: false });
+      return false;
+    }
+
+    mintBot({ web3, account, contract });
   };
 
   return (
@@ -143,8 +138,8 @@ const CreateBot = () => {
           </div>
         </div>
         <TextField
-          onChange={handleName}
-          value={name}
+          onChange={handleChange}
+          name="name"
           fullWidth
           id="input-name"
           label="Name"
@@ -152,8 +147,8 @@ const CreateBot = () => {
           size="small"
         />
         <TextField
-          onChange={handleDescription}
-          value={description}
+          onChange={handleChange}
+          name="description"
           size="small"
           fullWidth
           id="input-description"
@@ -165,20 +160,24 @@ const CreateBot = () => {
         <FormControl size="small">
           <InputLabel id="select-pair-label">Pair</InputLabel>
           <Select
+            onChange={handleChange}
+            name="pair"
             labelId="select-pair-label"
             id="input-pair"
-            value={pair}
-            onChange={handlePair}
             autoWidth
             label="Pair"
           >
-            <MenuItem value={"WBTC"}>WBTC / USDC</MenuItem>
-            <MenuItem value={"WETH"}>WETH / USDC</MenuItem>
+            <MenuItem value={"0x8cdA7F95298418Bb6b5e424c1EEE4B18a0C1139C"}>
+              WBTC / USDC
+            </MenuItem>
+            <MenuItem value={"0x3c2fEc7E0b326C62688D8ee2119c8e26d668DF70"}>
+              WETH / USDC
+            </MenuItem>
           </Select>
         </FormControl>
         <TextField
-          onChange={handleName}
-          value={name}
+          onChange={handleChange}
+          name="buyPrice"
           fullWidth
           id="input-buy-price"
           label="Buy Price"
@@ -186,8 +185,8 @@ const CreateBot = () => {
           size="small"
         />
         <TextField
-          onChange={handleName}
-          value={name}
+          onChange={handleChange}
+          name="sellPrice"
           fullWidth
           id="input-SELL-price"
           label="Sell Price"
@@ -200,13 +199,13 @@ const CreateBot = () => {
             type="submit"
             variant="outlined"
             onClick={verifyData}
-            disabled={mint.state === "MINTING..."}
+            disabled={state === "MINTING..."}
           >
-            {mint.state}
+            {state}
           </Button>
         </div>
       </Card>
-      <Collapse in={error}>
+      <Collapse in={error.field || error.account}>
         <Alert
           severity="error"
           action={
@@ -215,7 +214,7 @@ const CreateBot = () => {
               color="inherit"
               size="small"
               onClick={() => {
-                setError(false);
+                setError({ field: false, account: false });
               }}
             >
               <CloseOutlined fontSize="inherit" />
@@ -223,21 +222,15 @@ const CreateBot = () => {
           }
           sx={{ mt: 2 }}
         >
-          Complete all fields!
+          {error.field && "Complete all fields"}
+          {error.account && "Connect wallet"}
         </Alert>
       </Collapse>
-      <Collapse in={mint.data}>
+      {/* <Collapse in={}>
         <Alert
           severity="success"
           action={
-            <IconButton
-              aria-label="close"
-              color="inherit"
-              size="small"
-              onClick={() => {
-                setMint({ state: "MINT NFT BOT", data: false });
-              }}
-            >
+            <IconButton aria-label="close" color="inherit" size="small">
               <CloseOutlined fontSize="inherit" />
             </IconButton>
           }
@@ -253,12 +246,18 @@ const CreateBot = () => {
             View on explorer
           </Link>
         </Alert>
-      </Collapse>
+      </Collapse> */}
     </>
   );
 };
 
-const ListBot = () => {
+const ListBot = ({ account, network, contract, web3 }) => {
+  const { nftUserList, getUserNfts } = useNFTStorage();
+
+  useEffect(() => {
+    // getUserNfts({ web3, contract, account });
+  }, [web3, contract, account]);
+
   return (
     <List
       sx={{
@@ -267,115 +266,73 @@ const ListBot = () => {
         color: "#ffffff",
       }}
     >
-      <ListItem button>
-        <ListItemAvatar>
-          <Avatar>
-            <ImageAspectRatioRounded />
-          </Avatar>
-        </ListItemAvatar>
-        <ListItemText
-          sx={{
-            color: "#ffffff",
-          }}
-          primary="#1"
-          secondary="BUY: 20100 / SELL: 20900"
-        />
-      </ListItem>
-      <Divider />
-      <ListItem button>
-        <ListItemAvatar>
-          <Avatar>
-            <ImageAspectRatioRounded />
-          </Avatar>
-        </ListItemAvatar>
-        <ListItemText
-          sx={{
-            color: "#ffffff",
-          }}
-          primary="#2"
-          secondary="BUY: 20000 / SELL: 20200"
-        />
-      </ListItem>
-      <Divider />
-      <ListItem button>
-        <ListItemAvatar>
-          <Avatar>
-            <ImageAspectRatioRounded />
-          </Avatar>
-        </ListItemAvatar>
-        <ListItemText
-          sx={{
-            color: "#ffffff",
-          }}
-          primary="#3"
-          secondary="BUY: 2300 / SELL: 22100"
-        />
-      </ListItem>
-      <Divider />
-      <ListItem button>
-        <ListItemAvatar>
-          <Avatar>
-            <ImageAspectRatioRounded />
-          </Avatar>
-        </ListItemAvatar>
-        <ListItemText
-          sx={{
-            color: "#ffffff",
-          }}
-          primary="#4"
-          secondary="BUY: 20500 / SELL: 20700"
-        />
-      </ListItem>
-      <Divider />
-      <ListItem button>
-        <ListItemAvatar>
-          <Avatar>
-            <ImageAspectRatioRounded />
-          </Avatar>
-        </ListItemAvatar>
-        <ListItemText
-          sx={{
-            color: "#ffffff",
-          }}
-          primary="#5"
-          secondary="BUY: 20800 / SELL: 26000"
-        />
-      </ListItem>
-      <Divider />
-      <ListItem button>
-        <ListItemAvatar>
-          <Avatar>
-            <ImageAspectRatioRounded />
-          </Avatar>
-        </ListItemAvatar>
-        <ListItemText
-          sx={{
-            color: "#ffffff",
-          }}
-          primary="#7"
-          secondary="BUY: 19200 / SELL: 19700"
-        />
-      </ListItem>
-      <Divider />
+      {/* {nftList &&
+        nftList.map((data, index) => {
+          return (
+            <>
+              <ListItem button key={index}>
+                <ListItemAvatar>
+                  <Avatar>
+                    <img
+                      src={`https://nftstorage.link/ipfs/${data.image.substring(
+                        7,
+                        data.image.length
+                      )}`}
+                      alt="nft"
+                    />
+                  </Avatar>
+                </ListItemAvatar>
+                <ListItemText
+                  sx={{
+                    color: "#ffffff",
+                  }}
+                  primary={data.name}
+                  secondary={data.description}
+                />
+              </ListItem>
+              <Divider />
+            </>
+          );
+        })} */}
     </List>
   );
 };
 
-export default function LeftPanel() {
+export default function Bots({ account, network, contract, web3 }) {
   const [bot, setBot] = useState(false);
 
   return (
     <>
-      <Button
-        onClick={() => setBot(!bot)}
-        variant="contained"
-        color="success"
-        disableElevation
-        fullWidth
-      >
-        {bot ? "SHOW BOTS" : "CREATE BOT"}
-      </Button>
-      {bot ? <CreateBot /> : <ListBot />}
+      {account && network && contract && web3 ? (
+        <>
+          <Button
+            onClick={() => setBot(!bot)}
+            variant="contained"
+            color="success"
+            disableElevation
+            fullWidth
+          >
+            {bot ? "SHOW BOTS" : "CREATE BOT"}
+          </Button>
+          {bot ? (
+            <CreateBot
+              account={account}
+              network={network}
+              contract={contract}
+              web3={web3}
+            />
+          ) : (
+            <ListBot
+              account={account}
+              network={network}
+              contract={contract}
+              web3={web3}
+            />
+          )}
+        </>
+      ) : (
+        <WalletWarning />
+      )}
     </>
   );
 }
