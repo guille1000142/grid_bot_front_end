@@ -27,6 +27,7 @@ export default function useMinter() {
       .then((metadata) => {
         contract.gridBotFactory.methods
           .factoryNewGrid(
+            input.name,
             metadata.url,
             input.pair,
             input.buyPrice,
