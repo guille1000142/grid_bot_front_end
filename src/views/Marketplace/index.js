@@ -11,7 +11,7 @@ export default function Marketplace() {
       <header className="header">
         <NavBar account={account} connectWallet={connectWallet} />
       </header>
-      <section className="section">
+      <section className="market">
         <Market
           account={account}
           network={network}

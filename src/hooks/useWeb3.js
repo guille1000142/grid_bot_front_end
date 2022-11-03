@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import Web3 from "web3";
-import toast from "react-hot-toast";
 import GridBotFactoryAbi from "../abis/mumbai/GridBotFactory.json";
 import NFTGridDataAbi from "../abis/mumbai/NFTGridData.json";
 import { GridBotFactoryAddress, NFTGridDataAddress } from "../utils/address";
@@ -97,7 +96,6 @@ export default function useWeb3() {
 
   const connectWallet = (change) => {
     if (typeof window.ethereum === "undefined") {
-      toast.error("Metamask not installed");
       return false;
     }
 
@@ -122,6 +120,7 @@ export default function useWeb3() {
     }
   };
 
+  // PENDIENTE DE TERMINAR : MUMBAI Y POLYGON
   const addNetwork = ({ chainId }) => {
     window.ethereum.request({
       method: "wallet_addEthereumChain",
@@ -145,7 +144,7 @@ export default function useWeb3() {
   };
 
   const changeNetwork = ({ chainId }) => {
-    const change = window.ethereum
+    window.ethereum
       .request({
         method: "wallet_switchEthereumChain",
         params: [{ chainId: chainId }],
@@ -155,12 +154,6 @@ export default function useWeb3() {
           addNetwork({ chainId });
         }
       });
-
-    toast.promise(change, {
-      loading: "Connecting...",
-      success: "Connected",
-      error: "Failed",
-    });
   };
 
   return {

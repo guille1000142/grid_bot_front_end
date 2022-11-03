@@ -8,7 +8,7 @@
   gap: 5px;
   grid-template:
     "header" 50px
-    "section" 900px;
+    "market" auto;
 }
 
 .header {
@@ -20,24 +20,8 @@
   padding: 20px 10px;
 }
 
-.nav {
-  grid-area: nav;
-  background-color: #0c163a;
-  overflow-y: auto;
-}
-
-.section {
-  grid-area: section;
-  background-color: #0c163a;
-}
-
-.article {
-  grid-area: article;
-  background-color: #0c163a;
-}
-
-.aside {
-  grid-area: aside;
+.market {
+  grid-area: market;
   background-color: #0c163a;
 }
 
@@ -48,4 +32,127 @@
   justify-content: space-between;
   align-items: center;
   gap: 10px;
+}
+
+/* MARKET */
+
+.masonry {
+  margin: 2rem auto;
+  width: 80%;
+}
+
+.nft-container {
+  /* display: inline-block;
+  text-align: center;
+  margin: 0 auto;
+  padding: 30px;
+  transition: transform 0.3s;  */
+
+  position: relative;
+  transition: all 0.5s ease;
+  transform: perspective(600px);
+  transform-origin: 100% 50%;
+  transform-style: preserve-3d;
+}
+
+.nft-container:active {
+  transform: perspective(600px) rotateY(-180deg) translateX(100%);
+}
+
+/* .nft-container:hover {
+  transform: scale(1.05);
+} */
+
+.nft-container .nft-image,
+.nft-container .nft-info {
+  /* position: absolute; */
+  backface-visibility: hidden;
+}
+
+.nft-container .nft-info {
+  transform: rotateY(-180deg);
+}
+
+/* .nft-container:active {
+  -moz-transform: scaleX(-1);
+  -o-transform: scaleX(-1);
+  -ms-transform: scaleX(-1);
+  -webkit-transform: scaleX(-1);
+  transform: scaleX(-1);
+  z-index: 1000;
+} */
+
+.nft-container img {
+  border-radius: 20px;
+  max-width: 400px;
+}
+
+/* .nft-info {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  width: 100%;
+  padding: 10px;
+  background-color: #272727;
+  position: absolute;
+  bottom: 0;
+  max-width: 400px;
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+} */
+
+.nft-info {
+  margin: 0 auto;
+  /* display: flex;
+  justify-content: space-around;
+  align-items: center;
+  width: 100%;
+  padding: 10px;
+  background-color: #272727;
+  max-width: 400px;
+  border-radius: 20px; */
+}
+
+/* FLIP */
+
+.flip-container {
+  background-color: transparent;
+  min-width: 100px;
+  min-height: 300px;
+  border: 1px solid #ccc;
+  perspective: 1000px;
+}
+.card {
+  position: relative;
+  min-width: 100px;
+  min-height: 300px;
+  text-align: center;
+  transition: transform 0.4s;
+  transform-style: preserve-3d;
+}
+.flip-container:hover .card {
+  transform: scale(1.05);
+}
+.flip-container:active .card {
+  transform: rotateY(180deg);
+}
+.front,
+.back {
+  position: absolute;
+  min-width: 100px;
+  min-height: 300px;
+  backface-visibility: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+}
+.front {
+  background-color: #ff0000;
+  color: #fff;
+}
+.back {
+  background-color: #0000ff;
+  color: white;
+  transform: rotateY(180deg);
 }

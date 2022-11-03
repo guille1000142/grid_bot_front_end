@@ -40,8 +40,8 @@ export default function useNFTStorage() {
   };
 
   const getAllNfts = () => {
-    const date = "2022-11-01T17%3A32%3A28Z";
-    const filter = 1000;
+    const date = encodeURI(new Date().toISOString());
+    const filter = 100;
     const gateway = "https://api.nft.storage/";
     const api = `http://${process.env.REACT_APP_API_URL}/api/v1/nfts`;
 
@@ -51,33 +51,24 @@ export default function useNFTStorage() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${process.env.REACT_APP_NFT_STORAGE_KEY}`,
       },
-    })
-      .then((res) => {
-        res.json().then((data) => {
-          console.log(data);
-          Promise.all(
-            data.value.map((data) => {
-              return fetch(`${api}/${data.cid}`, {
-                method: "GET",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-              })
-                .then((res) => {
-                  return res.json().then((data) => {
-                    return data;
-                  });
-                })
-                .catch((error) => {
-                  console.log(error);
-                });
-            })
-          ).then((metadata) => setNftList(metadata));
-        });
-      })
-      .catch((error) => {
-        console.log(error);
+    }).then((res) => {
+      res.json().then((data) => {
+        Promise.all(
+          data.value.map((data) => {
+            return fetch(`${api}/${data.cid}`, {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }).then((res) => {
+              return res.json().then((data) => {
+                return data;
+              });
+            });
+          })
+        ).then((metadata) => setNftList(metadata));
       });
+    });
   };
 
   return { nftUserList, getUserNfts, nftList, getAllNfts };
