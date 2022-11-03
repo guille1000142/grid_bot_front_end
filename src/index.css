@@ -40,7 +40,7 @@ body::-webkit-scrollbar-thumb {
 .wallet-warning {
   width: 125px;
   height: 125px;
-  background-color: #121212;
+  background-color: #0c0c0c;
   border-radius: 50%;
   position: absolute;
   top: 50%;

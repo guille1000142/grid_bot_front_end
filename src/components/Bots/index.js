@@ -254,8 +254,10 @@ const CreateBot = ({ account, network, contract, web3 }) => {
 const ListBot = ({ account, network, contract, web3 }) => {
   const { nftUserList, getUserNfts } = useNFTStorage();
 
+  console.log(nftUserList);
+
   useEffect(() => {
-    // getUserNfts({ web3, contract, account });
+    getUserNfts({ web3, contract, account });
   }, [web3, contract, account]);
 
   return (

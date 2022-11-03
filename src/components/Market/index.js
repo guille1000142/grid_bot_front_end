@@ -1,58 +1,92 @@
-import { useEffect } from "react";
-import Masonry, { ResponsiveMasonry } from "react-responsive-masonry";
-import { Loader } from "../Loader";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import debounce from "just-debounce-it";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import { Skeleton } from "@mui/material";
 import { WalletWarning } from "../WalletWarning";
 import useNFTStorage from "../../hooks/useNFTStorage";
-import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import { Loader } from "../Loader";
 import FavoriteIcon from "@mui/icons-material/Favorite";
+import useNearScreen from "../../hooks/useNearScreen";
 
 export default function Market({ account, network, contract, web3 }) {
-  const { nftList, getAllNfts } = useNFTStorage();
+  const { nftList, getAllNfts, randomPosition } = useNFTStorage();
+  const [items, setItems] = useState(20);
+  const skeletonList = useMemo(
+    () => [...Array(500)].map((x) => randomPosition(3)),
+    []
+  );
+  const screenRef = useRef();
+  const { isNearScreen } = useNearScreen({
+    externalRef: screenRef,
+    once: false,
+  });
+
+  console.log(items);
 
   useEffect(() => {
-    if (account && network && contract && web3) {
-      getAllNfts({ account, network, contract, web3 });
+    if (nftList) {
+      setItems(20);
+    } else {
+      getAllNfts();
     }
-  }, [account, network, contract, web3]);
+  }, [nftList]);
+
+  const debounceHandleLoad = useCallback(
+    debounce(() => {
+      setItems((prevState) => prevState + 20);
+    }, 250),
+    []
+  );
+
+  useEffect(() => {
+    if (isNearScreen) debounceHandleLoad();
+  }, [debounceHandleLoad, isNearScreen]);
 
   return (
     <>
       {account && network && contract && web3 ? (
         <>
-          <div className="masonry">
-            <ResponsiveMasonry
-              columnsCountBreakPoints={{ 350: 1, 750: 2, 900: 3 }}
-            >
-              <Masonry gutter={40}>
-                {nftList ? (
-                  nftList.map((data, index) => (
-                    <div className="flip-container">
-                      <div class="card">
-                        <img
-                          className="front"
-                          key={index}
-                          src={`https://nftstorage.link/ipfs/${data.image.substring(
-                            7,
-                            data.image.length
-                          )}`}
-                          alt=""
-                        />
-                        <div className="back">
-                          <span>{data.name}</span>
-                          <small>{data.description}</small>
-                          <span>
-                            <FavoriteBorderIcon />
-                            <FavoriteIcon />
-                          </span>
-                        </div>
-                      </div>
+          <div className="masonry-container">
+            {nftList &&
+              nftList.slice(0, items).map((nft, index) => (
+                <div className={nft.position} key={index}>
+                  <div className="picture">
+                    <div className="front">
+                      <img
+                        src={`https://nftstorage.link/ipfs/${nft.data.image.substring(
+                          7,
+                          nft.data.image.length
+                        )}`}
+                        alt=""
+                      />
                     </div>
-                  ))
-                ) : (
-                  <Loader />
-                )}
-              </Masonry>
-            </ResponsiveMasonry>
+                    <div className="back">
+                      <h4>{nft.data.name}</h4>
+                      <span>{nft.data.description}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            {skeletonList &&
+              !nftList &&
+              skeletonList.slice(0, items).map((position, index) => (
+                <div className={position} key={index}>
+                  <div className="picture">
+                    <div className="front">
+                      <Skeleton
+                        sx={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                        variant="rectangular"
+                      />
+                    </div>
+                    <div className="back"></div>
+                  </div>
+                </div>
+              ))}
+            <div id="final-page" ref={screenRef}></div>
           </div>
         </>
       ) : (

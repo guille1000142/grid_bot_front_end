@@ -2,7 +2,12 @@ import { useEffect, useState } from "react";
 import Web3 from "web3";
 import GridBotFactoryAbi from "../abis/mumbai/GridBotFactory.json";
 import NFTGridDataAbi from "../abis/mumbai/NFTGridData.json";
-import { GridBotFactoryAddress, NFTGridDataAddress } from "../utils/address";
+import UpKeepIDRegisterFactoryAbi from "../abis/mumbai/UpKeepIDRegisterFactory.json";
+import {
+  GridBotFactoryAddress,
+  NFTGridDataAddress,
+  UpKeepIDRegisterFactoryAddress,
+} from "../utils/address";
 
 export default function useWeb3() {
   const [maticPrice, setMaticPrice] = useState(false);
@@ -26,12 +31,17 @@ export default function useWeb3() {
       setWeb3({ quickNode, metamask });
 
       const gridBotFactory = new metamask.eth.Contract(
-        JSON.parse(GridBotFactoryAbi.result),
+        GridBotFactoryAbi,
         GridBotFactoryAddress
       );
 
       const nftGridData = new metamask.eth.Contract(
-        JSON.parse(NFTGridDataAbi.result),
+        NFTGridDataAbi,
+        NFTGridDataAddress
+      );
+
+      const upKeepIDRegisterFactory = new metamask.eth.Contract(
+        UpKeepIDRegisterFactoryAbi,
         NFTGridDataAddress
       );
 
