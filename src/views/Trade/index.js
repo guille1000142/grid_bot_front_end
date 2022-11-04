@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import NavBar from "../../components/NavBar";
 import Bots from "../../components/Bots";
 import Chart from "../../components/Chart";
@@ -9,6 +9,8 @@ import "./index.css";
 
 export default function Trade() {
   const { account, network, contract, web3, connectWallet } = useWeb3();
+  const [bot, setBot] = useState(false);
+
   return (
     <div className="trade-grid-container">
       <header className="header">
@@ -20,10 +22,12 @@ export default function Trade() {
           network={network}
           contract={contract}
           web3={web3}
+          bot={bot}
+          setBot={setBot}
         />
       </nav>
       <section className="chat">
-        <Chart />
+        <Chart bot={bot} />
       </section>
       <article className="transactions">
         <Transactions
@@ -39,6 +43,7 @@ export default function Trade() {
           network={network}
           contract={contract}
           web3={web3}
+          bot={bot}
         />
       </aside>
     </div>

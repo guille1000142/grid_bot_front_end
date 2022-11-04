@@ -31,18 +31,18 @@ export default function useWeb3() {
       setWeb3({ quickNode, metamask });
 
       const gridBotFactory = new metamask.eth.Contract(
-        GridBotFactoryAbi,
+        JSON.parse(GridBotFactoryAbi.result),
         GridBotFactoryAddress
       );
 
       const nftGridData = new metamask.eth.Contract(
-        NFTGridDataAbi,
+        JSON.parse(NFTGridDataAbi.result),
         NFTGridDataAddress
       );
 
       const upKeepIDRegisterFactory = new metamask.eth.Contract(
-        UpKeepIDRegisterFactoryAbi,
-        NFTGridDataAddress
+        JSON.parse(UpKeepIDRegisterFactoryAbi.result),
+        UpKeepIDRegisterFactoryAddress
       );
 
       setContract({ gridBotFactory, nftGridData });

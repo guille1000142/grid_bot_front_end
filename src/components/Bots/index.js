@@ -25,7 +25,8 @@ import { WalletWarning } from "../WalletWarning";
 
 const CreateBot = ({ account, network, contract, web3 }) => {
   const [error, setError] = useState({ field: false, account: false });
-  const { image, setImage, input, setInput, state, mintBot } = useMinter();
+  const { image, setImage, input, setInput, state, tx, setTx, mintBot } =
+    useMinter();
 
   useEffect(() => {
     const iconButton = document.querySelector("#icon");
@@ -226,97 +227,123 @@ const CreateBot = ({ account, network, contract, web3 }) => {
           {error.account && "Connect wallet"}
         </Alert>
       </Collapse>
-      {/* <Collapse in={}>
-        <Alert
-          severity="success"
-          action={
-            <IconButton aria-label="close" color="inherit" size="small">
-              <CloseOutlined fontSize="inherit" />
-            </IconButton>
-          }
-          sx={{ mt: 2 }}
-        >
-          Minted! &nbsp;
-          <Link
-            underline="hover"
-            href={`https://ipfs.io/ipfs/${mint.data.ipnft}/metadata.json`}
-            target="_blank"
-            rel="noopener"
+      {tx && (
+        <Collapse in={tx}>
+          <Alert
+            severity="success"
+            action={
+              <IconButton
+                aria-label="close"
+                color="inherit"
+                size="small"
+                onClick={() => {
+                  setTx(false);
+                }}
+              >
+                <CloseOutlined fontSize="inherit" />
+              </IconButton>
+            }
+            sx={{ mt: 2 }}
           >
-            View on explorer
-          </Link>
-        </Alert>
-      </Collapse> */}
+            Minted! &nbsp;
+            <Link
+              underline="hover"
+              href={`https://mumbai.polygonscan.com/address/${tx.events.RoleGranted[0].address}`}
+              target="_blank"
+              rel="noopener"
+            >
+              View Bot
+            </Link>
+            &nbsp;
+            <Link
+              underline="hover"
+              href={`https://mumbai.polygonscan.com/token/${
+                tx.events[1].address
+              }?a=${web3.quickNode.utils.hexToNumber(
+                tx.events[1].raw.topics[3]
+              )}`}
+              target="_blank"
+              rel="noopener"
+            >
+              View NFT
+            </Link>
+          </Alert>
+        </Collapse>
+      )}
     </>
   );
 };
 
-const ListBot = ({ account, network, contract, web3 }) => {
+const ListBot = ({ account, network, contract, web3, bot, setBot }) => {
   const { nftUserList, getUserNfts } = useNFTStorage();
-
-  console.log(nftUserList);
 
   useEffect(() => {
     getUserNfts({ web3, contract, account });
   }, [web3, contract, account]);
-
+  console.log(bot);
   return (
-    <List
-      sx={{
-        width: "100%",
-        maxWidth: 360,
-        color: "#ffffff",
-      }}
-    >
-      {/* {nftList &&
-        nftList.map((data, index) => {
+    <List>
+      {nftUserList &&
+        nftUserList.map((data, index) => {
           return (
             <>
-              <ListItem button key={index}>
-                <ListItemAvatar>
-                  <Avatar>
-                    <img
-                      src={`https://nftstorage.link/ipfs/${data.image.substring(
-                        7,
-                        data.image.length
-                      )}`}
-                      alt="nft"
-                    />
-                  </Avatar>
-                </ListItemAvatar>
-                <ListItemText
-                  sx={{
-                    color: "#ffffff",
-                  }}
-                  primary={data.name}
-                  secondary={data.description}
-                />
-              </ListItem>
-              <Divider />
+              <div
+                className={`data-container ${
+                  data.botAddress === bot.botAddress ? "selected" : ""
+                }`}
+                key={index}
+                onClick={() => setBot(data)}
+              >
+                <div className="nft-info">
+                  <h4 className="nft-name">{data.name}</h4>
+                  <img
+                    className="nft-image"
+                    src={`https://nftstorage.link/ipfs/${data.image.substring(
+                      7,
+                      data.image.length
+                    )}`}
+                    alt="nft"
+                  />
+                  <small className="nft-description">{data.description}</small>
+                </div>
+
+                <div className="bot-info">
+                  <span>Buy: {data.buyPrice}</span>
+                  <span>Sell: {data.sellPrice}</span>
+                </div>
+              </div>
+              <div className="divider"></div>
             </>
           );
-        })} */}
+        })}
     </List>
   );
 };
 
-export default function Bots({ account, network, contract, web3 }) {
-  const [bot, setBot] = useState(false);
+export default function Bots({
+  account,
+  network,
+  contract,
+  web3,
+  bot,
+  setBot,
+}) {
+  const [list, setList] = useState(false);
 
   return (
     <>
       {account && network && contract && web3 ? (
         <>
           <Button
-            onClick={() => setBot(!bot)}
+            onClick={() => setList(!list)}
             variant="contained"
             color="success"
             disableElevation
             fullWidth
           >
-            {bot ? "SHOW BOTS" : "CREATE BOT"}
+            {list ? "SHOW BOTS" : "CREATE BOT"}
           </Button>
-          {bot ? (
+          {list ? (
             <CreateBot
               account={account}
               network={network}
@@ -329,6 +356,8 @@ export default function Bots({ account, network, contract, web3 }) {
               network={network}
               contract={contract}
               web3={web3}
+              bot={bot}
+              setBot={setBot}
             />
           )}
         </>

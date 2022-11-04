@@ -15,6 +15,7 @@ export default function useMinter() {
     sellPrice: "",
   });
   const [state, setState] = useState("MINT NFT BOT");
+  const [tx, setTx] = useState(false);
 
   const mintBot = async ({ web3, account, contract }) => {
     setState("MINTING...");
@@ -53,6 +54,7 @@ export default function useMinter() {
               sellPrice: "",
             });
             setState("MINT NFT BOT");
+            setTx(receipt);
           })
           .on("error", (err, receipt) => {
             if (err.code === -32603) {
@@ -77,6 +79,8 @@ export default function useMinter() {
     input,
     setInput,
     state,
+    tx,
+    setTx,
     mintBot,
   };
 }

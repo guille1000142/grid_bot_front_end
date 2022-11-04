@@ -2,43 +2,7 @@ import { useState } from "react";
 
 export default function useNFTStorage() {
   const [nftUserList, setNftUserList] = useState(false);
-  const [nftList, setNftList] = useState(false);
-
-  const getUserNfts = ({ web3, contract, account }) => {
-    const api = `http://${process.env.REACT_APP_API_URL}/api/v1/nfts`;
-
-    contract.nftGridData.methods
-      .balanceOf(account)
-      .call()
-      .then((amount) => {
-        console.log(amount);
-        let cids = [];
-        for (let i = 0; i < amount; i++) {
-          contract.gridBotFactory.methods
-            .listOfGridsPerUser(account, i)
-            .call()
-            .then((data) => {
-              // var ipfs = /^(\w+):\/\/([^\/]+)([^]+)$/.exec(data[1]);
-              // cids.push(ipfs[3]);
-            });
-        }
-
-        // Promise.all(
-        //   cids.map((cid) => {
-        //     return fetch(`${api}/${cid}`, {
-        //       method: "GET",
-        //       headers: {
-        //         "Content-Type": "application/json",
-        //       },
-        //     }).then((res) => {
-        //       return res.json().then((data) => {
-        //         return data;
-        //       });
-        //     });
-        //   })
-        // ).then((metadata) => setNftUserList(metadata));
-      });
-  };
+  const [nftGlobalList, setNftGlobalList] = useState(false);
 
   const randomPosition = (max) => {
     const number = Math.floor(Math.random() * max);
@@ -52,8 +16,49 @@ export default function useNFTStorage() {
     return className;
   };
 
-  const getAllNfts = () => {
-    console.log("fetching");
+  const getUserNfts = ({ web3, contract, account }) => {
+    const api = `http://${process.env.REACT_APP_API_URL}/api/v1/nfts`;
+
+    contract.gridBotFactory.methods
+      .getTotalNumberOfGrid(account)
+      .call()
+      .then((amount) => {
+        const bots = Array.apply(null, Array(parseInt(amount)));
+        Promise.all(
+          bots.map((data, index) => {
+            return contract.gridBotFactory.methods
+              .listOfGridsPerUser(account, index)
+              .call()
+              .then((data) => {
+                return contract.nftGridData.methods
+                  .tokenURI(data.nftID)
+                  .call()
+                  .then((uri) => {
+                    const cid = /^(\w+):\/\/([^\/]+)([^]+)$/.exec(uri);
+                    return fetch(`${api}/${cid[2]}`, {
+                      method: "GET",
+                      headers: {
+                        "Content-Type": "application/json",
+                      },
+                    }).then((res) => {
+                      return res.json().then((metadata) => {
+                        return {
+                          botAddress: data.gridBotAddress,
+                          buyPrice: data.buyPrice_,
+                          sellPrice: data.sellPrice_,
+                          cid: cid[2],
+                          ...metadata,
+                        };
+                      });
+                    });
+                  });
+              });
+          })
+        ).then((data) => setNftUserList(data));
+      });
+  };
+
+  const getGlobalNfts = () => {
     const date = encodeURI(new Date().toISOString());
     const filter = 500;
     const gateway = "https://api.nft.storage/";
@@ -66,27 +71,31 @@ export default function useNFTStorage() {
         Authorization: `Bearer ${process.env.REACT_APP_NFT_STORAGE_KEY}`,
       },
     }).then((res) => {
-      res.json().then((data) => {
+      res.json().then((nfts) => {
         Promise.all(
-          data.value.map((data) => {
-            return fetch(`${api}/${data.cid}`, {
+          nfts.value.map((nft) => {
+            const position = randomPosition(3);
+            return fetch(`${api}/${nft.cid}`, {
               method: "GET",
               headers: {
                 "Content-Type": "application/json",
               },
             }).then((res) => {
-              return res.json().then((data) => {
-                const position = randomPosition(3);
-                return { position, data };
+              return res.json().then((metadata) => {
+                return { ...metadata, position };
               });
             });
           })
-        ).then((metadata) => {
-          setNftList(metadata);
-        });
+        ).then((data) => setNftGlobalList(data));
       });
     });
   };
 
-  return { nftUserList, getUserNfts, nftList, getAllNfts, randomPosition };
+  return {
+    nftUserList,
+    nftGlobalList,
+    getUserNfts,
+    getGlobalNfts,
+    randomPosition,
+  };
 }

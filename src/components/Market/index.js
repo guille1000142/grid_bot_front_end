@@ -9,7 +9,7 @@ import FavoriteIcon from "@mui/icons-material/Favorite";
 import useNearScreen from "../../hooks/useNearScreen";
 
 export default function Market({ account, network, contract, web3 }) {
-  const { nftList, getAllNfts, randomPosition } = useNFTStorage();
+  const { nftGlobalList, getGlobalNfts, randomPosition } = useNFTStorage();
   const [items, setItems] = useState(20);
   const skeletonList = useMemo(
     () => [...Array(500)].map((x) => randomPosition(3)),
@@ -21,15 +21,13 @@ export default function Market({ account, network, contract, web3 }) {
     once: false,
   });
 
-  console.log(items);
-
   useEffect(() => {
-    if (nftList) {
+    if (nftGlobalList) {
       setItems(20);
     } else {
-      getAllNfts();
+      getGlobalNfts();
     }
-  }, [nftList]);
+  }, [nftGlobalList]);
 
   const debounceHandleLoad = useCallback(
     debounce(() => {
@@ -47,28 +45,28 @@ export default function Market({ account, network, contract, web3 }) {
       {account && network && contract && web3 ? (
         <>
           <div className="masonry-container">
-            {nftList &&
-              nftList.slice(0, items).map((nft, index) => (
+            {nftGlobalList &&
+              nftGlobalList.slice(0, items).map((nft, index) => (
                 <div className={nft.position} key={index}>
                   <div className="picture">
                     <div className="front">
                       <img
-                        src={`https://nftstorage.link/ipfs/${nft.data.image.substring(
+                        src={`https://nftstorage.link/ipfs/${nft.image.substring(
                           7,
-                          nft.data.image.length
+                          nft.image.length
                         )}`}
                         alt=""
                       />
                     </div>
                     <div className="back">
-                      <h4>{nft.data.name}</h4>
-                      <span>{nft.data.description}</span>
+                      <h4>{nft.name}</h4>
+                      <span>{nft.description}</span>
                     </div>
                   </div>
                 </div>
               ))}
             {skeletonList &&
-              !nftList &&
+              !nftGlobalList &&
               skeletonList.slice(0, items).map((position, index) => (
                 <div className={position} key={index}>
                   <div className="picture">
