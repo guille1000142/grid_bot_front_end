@@ -18,7 +18,7 @@ export default function Trade() {
     connectWallet,
   } = useWeb3();
   const [bot, setBot] = useState(false);
-
+  console.log(contract);
   return (
     <div className="trade-grid-container">
       <header className="header">
@@ -43,6 +43,7 @@ export default function Trade() {
           network={network}
           contract={contract}
           web3={web3}
+          bot={bot}
         />
       </article>
       <aside className="control">

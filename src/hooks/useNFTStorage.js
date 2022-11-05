@@ -19,18 +19,18 @@ export default function useNFTStorage() {
   const getUserNfts = ({ web3, contract, account, setBot }) => {
     const api = `http://${process.env.REACT_APP_API_URL}/api/v1/nfts`;
 
-    contract.gridBotFactory.methods
+    contract.quickNode.gridBotFactory.methods
       .getTotalNumberOfGrid(account)
       .call()
       .then((amount) => {
         const bots = Array.apply(null, Array(parseInt(amount)));
         Promise.all(
           bots.map((data, index) => {
-            return contract.gridBotFactory.methods
+            return contract.quickNode.gridBotFactory.methods
               .listOfGridsPerUser(account, index)
               .call()
               .then((data) => {
-                return contract.nftGridData.methods
+                return contract.quickNode.nftGridData.methods
                   .tokenURI(data.nftID)
                   .call()
                   .then((uri) => {

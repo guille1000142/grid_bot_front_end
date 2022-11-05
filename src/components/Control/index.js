@@ -1,15 +1,7 @@
 import { useEffect, useState } from "react";
-import { WalletWarning } from "../WalletWarning";
-import {
-  Button,
-  Card,
-  TextField,
-  Slider,
-  Alert,
-  Collapse,
-  IconButton,
-} from "@mui/material";
-import { CloseOutlined } from "@mui/icons-material";
+import { Warning } from "../Warning";
+import { Button, Card, TextField, Slider, Link } from "@mui/material";
+import { SnackBar } from "../SnackBar";
 
 export default function Control({
   account,
@@ -22,8 +14,10 @@ export default function Control({
 }) {
   const [state, setState] = useState(false);
   const [error, setError] = useState(false);
+  const [tx, setTx] = useState(false);
   const [data, setData] = useState(false);
   const [addBalance, setAddBalance] = useState(0);
+  const [botContract, setBotContract] = useState(false);
 
   const handleChange = (e) => {
     setAddBalance(parseFloat(e.target.value));
@@ -34,24 +28,33 @@ export default function Control({
   };
 
   useEffect(() => {
-    if (bot) {
+    if (bot && web3) {
       getBotData();
     }
-  }, [bot, state]);
+  }, [bot, web3, state]);
 
   const getBotData = async () => {
-    const botContract = readBotContract(bot.botAddress);
-    const usdcContract = await botContract.methods.getBalanceStable().call();
-    const pairContract = await botContract.methods
-      .getBalanceTradeableToken()
-      .call();
-    const wallet = await readBalance();
-    const allowance = await contract.usdcMock.methods
+    const spotContract = readBotContract(bot.botAddress);
+    setBotContract(spotContract);
+
+    const usdcBalance = web3.quickNode.utils.fromWei(
+      await spotContract.metamask.spotBotGrid.methods.getBalanceStable().call(),
+      "ether"
+    );
+    const pairBalance = web3.quickNode.utils.fromWei(
+      await spotContract.metamask.spotBotGrid.methods
+        .getBalanceTradeableToken()
+        .call(),
+      "ether"
+    );
+    const walletBalance = await readBalance();
+    const allowance = await contract.quickNode.usdcMock.methods
       .allowance(account, bot.botAddress)
       .call();
+
     setData({
-      bot: { usdc: usdcContract, pair: pairContract },
-      wallet,
+      bot: { usdc: usdcBalance, pair: pairBalance },
+      walletBalance,
       allowance,
     });
   };
@@ -71,6 +74,7 @@ export default function Control({
         // gasLimit: 500000,
       })
       .on("receipt", (receipt) => {
+        setTx({ withdraw: receipt });
         setState(!state);
       })
       .on("error", (err, receipt) => {
@@ -90,21 +94,53 @@ export default function Control({
   };
 
   const depositBalance = () => {
+    if (!account) {
+      setError({ field: false, account: true });
+      return false;
+    }
+    console.log(contract);
     if (
       addBalance <= 0 ||
-      addBalance > data.wallet.usdc ||
+      addBalance > data.walletBalance.usdc ||
       isNaN(parseFloat(addBalance))
     ) {
-      setError(true);
+      setError({ field: true, account: false });
       return false;
     }
 
-    contract.usdcMock.methods
-      .transferFrom(
-        account,
+    contract.metamask.usdcMock.methods
+      .transfer(
         bot.botAddress,
         web3.quickNode.utils.toWei(addBalance.toString(), "ether")
       )
+      .on("receipt", (receipt) => {
+        setTx({ deposit: receipt });
+        setState(!state);
+      })
+      .on("error", (err, receipt) => {
+        if (err.code === -32603) {
+          console.error("This transaction needs more gas to be executed");
+          return false;
+        }
+        if (err.code === 4001) {
+          console.error("Denied transaction signature");
+          return false;
+        }
+        if (!err.code) {
+          console.error("Transaction reverted");
+          return false;
+        }
+      });
+  };
+
+  const withdrawBalance = () => {
+    if (data.bot.usdc <= 0 && data.bot.pair <= 0) {
+      setError({ field: true, account: false });
+      return false;
+    }
+
+    botContract.metamask.spotBotGrid.methods
+      .withdraw()
       .send({
         from: account,
         // gasPrice: web3.utils.toWei(gas.fastest.toString(), "gwei"),
@@ -128,116 +164,149 @@ export default function Control({
         }
       });
   };
-
-  console.log(data);
+  console.log(tx);
   return (
     <>
-      {account && network && contract && web3 && bot && data ? (
+      {account && network && contract && web3 ? (
         <>
-          <Card
-            sx={{
-              padding: "15px",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              flexDirection: "column",
-              gap: "15px",
-            }}
-          >
-            <h4>{bot.name}</h4>
-            <img
-              className="nft-profile-image"
-              src={`https://nftstorage.link/ipfs/${bot.image.substring(
-                7,
-                bot.image.length
-              )}`}
-              alt="nft"
-            />
-            <div className="bot-description">
-              <small>{bot.description}</small>
-            </div>
-            &nbsp;
-            <h5>Bot</h5>
-            <div className="balance">
-              <span>Available balance:</span>
-              <span className="bold">{data.bot.usdc} USDC</span>
-            </div>
-            <div className="balance">
-              <span>Purchased balance:</span>
-              <span className="bold">{data.bot.pair} WBTC</span>
-            </div>
-            <Button
-              onClick={() => setState(!state)}
-              variant="contained"
-              color={state ? "error" : "success"}
-              disableElevation
-              fullWidth
-            >
-              {state ? "Stop" : "Start"}
-            </Button>
-            &nbsp;
-            <h5>Wallet</h5>
-            <TextField
-              onChange={handleChange}
-              name="addBalance"
-              fullWidth
-              id="input-add-balance"
-              label="Add Balance"
-              type="number"
-              size="small"
-              value={addBalance}
-              InputProps={{
-                endAdornment: "USDC",
+          {bot && data ? (
+            <Card
+              sx={{
+                padding: "15px",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                flexDirection: "column",
+                gap: "15px",
               }}
-            ></TextField>
-            <Slider
-              aria-label="%"
-              onChange={handleChangeSlider}
-              defaultValue={0}
-              getAriaValueText={0}
-              valueLabelDisplay="auto"
-              step={20}
-              marks
-              min={0}
-              max={100}
-            />
-            <div className="balance">
-              <span>Available balance:</span>
-              <span className="bold">{data.wallet.usdc} USDC</span>
-            </div>
-            <Button
-              variant="contained"
-              color="primary"
-              disableElevation
-              fullWidth
-              onClick={data.allowance === "0" ? approveBalance : depositBalance}
             >
-              {data.allowance === "0" ? "Approve" : "Deposit"}
-            </Button>
-            <Collapse in={error}>
-              <Alert
-                severity="error"
-                action={
-                  <IconButton
-                    aria-label="close"
-                    color="inherit"
-                    size="small"
-                    onClick={() => {
-                      setError(false);
-                    }}
-                  >
-                    <CloseOutlined fontSize="inherit" />
-                  </IconButton>
-                }
-                sx={{ mt: 2 }}
+              <h3>{bot.name}</h3>
+              <img
+                className="nft-profile-image"
+                src={`https://nftstorage.link/ipfs/${bot.image.substring(
+                  7,
+                  bot.image.length
+                )}`}
+                alt="nft"
+              />
+              <h4>Grid Bot</h4>
+              <div className="balance">
+                <span>State: </span>
+                <span
+                  className={data.bot.usdc > 0 ? "bold orange" : "bold red"}
+                >
+                  {data.bot.usdc > 0 ? "RUNNING" : "STOPPED"}
+                </span>
+              </div>
+              <div className="balance">
+                <span>Gas:</span>
+                <span className="bold">{data.bot.pair} LINK</span>
+              </div>
+              <div className="divider"></div>
+              <div className="balance">
+                <span>Available balance:</span>
+                <span className="bold">{data.bot.usdc} USDC</span>
+              </div>
+              <div className="balance">
+                <span>Purchased balance:</span>
+                <span className="bold">{data.bot.pair} WBTC</span>
+              </div>
+              <Button
+                variant="contained"
+                color="warning"
+                disableElevation
+                fullWidth
+                onClick={withdrawBalance}
+                disabled={data.bot.usdc <= 0 && data.bot.pair <= 0}
               >
-                Insufficient balance
-              </Alert>
-            </Collapse>
-          </Card>
+                WITHDRAW ALL
+              </Button>
+              &nbsp;
+              <h4>Wallet</h4>
+              <TextField
+                onChange={handleChange}
+                name="addBalance"
+                fullWidth
+                id="input-add-balance"
+                label="Add Balance"
+                type="number"
+                size="small"
+                value={addBalance}
+                InputProps={{
+                  endAdornment: "USDC",
+                }}
+              ></TextField>
+              <Slider
+                aria-label="%"
+                onChange={handleChangeSlider}
+                defaultValue={0}
+                getAriaValueText={0}
+                valueLabelDisplay="auto"
+                step={20}
+                marks
+                min={0}
+                max={100}
+              />
+              <div className="balance">
+                <span>Available balance:</span>
+                <span className="bold">{data.walletBalance.usdc} USDC</span>
+              </div>
+              <Button
+                variant="contained"
+                color="primary"
+                disableElevation
+                fullWidth
+                onClick={
+                  data.allowance === "0" ? approveBalance : depositBalance
+                }
+              >
+                {data.allowance === "0" ? "Approve" : "Deposit"}
+              </Button>
+              {error && (
+                <SnackBar
+                  open={error.field || error.account}
+                  setOpen={setError}
+                  label={
+                    (error.field && "Insufficient balance") ||
+                    (error.account && "Connect wallet")
+                  }
+                  state={"error"}
+                  position={{ vertical: "down", horizontal: "right" }}
+                />
+              )}
+              {tx && (
+                <SnackBar
+                  open={tx}
+                  setOpen={setTx}
+                  label={
+                    <>
+                      {tx.withdraw ? (
+                        <span>Successfully withdrawn!</span>
+                      ) : (
+                        <span>Successfully deposited!</span>
+                      )}
+                      &nbsp;
+                      <Link
+                        underline="hover"
+                        href={`https://mumbai.polygonscan.com/tx/${tx.hash}`}
+                        target="_blank"
+                        rel="noopener"
+                      >
+                        View Bot
+                      </Link>
+                    </>
+                  }
+                  state={"success"}
+                  position={{ vertical: "down", horizontal: "right" }}
+                />
+              )}
+            </Card>
+          ) : (
+            <Warning label={"SELECT BOT"} />
+          )}
         </>
       ) : (
-        <WalletWarning />
+        <Warning label={"CONNECT WALLET"} />
       )}
     </>
   );

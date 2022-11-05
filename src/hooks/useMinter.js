@@ -26,7 +26,8 @@ export default function useMinter() {
         image: image,
       })
       .then((metadata) => {
-        contract.gridBotFactory.methods
+        console.log(contract.metamask.gridBotFactory.methods);
+        contract.metamask.gridBotFactory.methods
           .factoryNewGrid(
             input.name,
             metadata.url,

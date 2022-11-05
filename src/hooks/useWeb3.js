@@ -33,42 +33,70 @@ export default function useWeb3() {
       const metamask = new Web3(window.ethereum);
       setWeb3({ quickNode, metamask });
 
-      const gridBotFactory = new metamask.eth.Contract(
+      const gridBotFactoryQ = new metamask.eth.Contract(
         JSON.parse(GridBotFactoryAbi.result),
         GridBotFactoryAddress
       );
 
-      const nftGridData = new metamask.eth.Contract(
+      const nftGridDataQ = new metamask.eth.Contract(
         JSON.parse(NFTGridDataAbi.result),
         NFTGridDataAddress
       );
 
-      const upKeepIDRegisterFactory = new metamask.eth.Contract(
+      const upKeepIDRegisterFactoryQ = new metamask.eth.Contract(
         JSON.parse(UpKeepIDRegisterFactoryAbi.result),
         UpKeepIDRegisterFactoryAddress
       );
 
-      const usdcMock = new metamask.eth.Contract(
+      const usdcMockQ = new metamask.eth.Contract(
+        ERC20StandardAbi,
+        usdcMockAddress
+      );
+
+      const gridBotFactoryM = new quickNode.eth.Contract(
+        JSON.parse(GridBotFactoryAbi.result),
+        GridBotFactoryAddress
+      );
+
+      const nftGridDataM = new quickNode.eth.Contract(
+        JSON.parse(NFTGridDataAbi.result),
+        NFTGridDataAddress
+      );
+
+      const upKeepIDRegisterFactoryM = new quickNode.eth.Contract(
+        JSON.parse(UpKeepIDRegisterFactoryAbi.result),
+        UpKeepIDRegisterFactoryAddress
+      );
+
+      const usdcMockM = new quickNode.eth.Contract(
         ERC20StandardAbi,
         usdcMockAddress
       );
 
       setContract({
-        gridBotFactory,
-        nftGridData,
-        upKeepIDRegisterFactory,
-        usdcMock,
+        metamask: {
+          gridBotFactory: gridBotFactoryM,
+          nftGridData: nftGridDataM,
+          upKeepIDRegisterFactory: upKeepIDRegisterFactoryM,
+          usdcMock: usdcMockM,
+        },
+        quickNode: {
+          gridBotFactory: gridBotFactoryQ,
+          nftGridData: nftGridDataQ,
+          upKeepIDRegisterFactory: upKeepIDRegisterFactoryQ,
+          usdcMock: usdcMockQ,
+        },
       });
 
       window.ethereum
         .request({ method: "eth_accounts" })
         .then((account) => setAccount(account[0]))
-        .catch((err) => console.log(err));
+        .catch((err) => console.error(err));
 
       window.ethereum
         .request({ method: "eth_chainId" })
         .then((chainId) => setNetwork(chainId))
-        .catch((err) => console.log(err));
+        .catch((err) => console.error(err));
 
       window.ethereum.on("accountsChanged", (accounts) => {
         setAccount(accounts[0]);
@@ -101,12 +129,23 @@ export default function useWeb3() {
   };
 
   const readBotContract = (address) => {
-    return new web3.metamask.eth.Contract(SpotBotGridAbi, address);
+    const spotBotGridM = new web3.metamask.eth.Contract(
+      SpotBotGridAbi,
+      address
+    );
+    const spotBotGridQ = new web3.quickNode.eth.Contract(
+      SpotBotGridAbi,
+      address
+    );
+    return {
+      metamask: { spotBotGrid: spotBotGridM },
+      quickNode: { spotBotGrid: spotBotGridQ },
+    };
   };
 
   const readBalance = async () => {
     const usdc = web3.quickNode.utils.fromWei(
-      await contract.usdcMock.methods.balanceOf(account).call(),
+      await contract.quickNode.usdcMock.methods.balanceOf(account).call(),
       "ether"
     );
     const native = web3.quickNode.utils.fromWei(

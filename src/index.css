@@ -37,7 +37,7 @@ body::-webkit-scrollbar-thumb {
   border-radius: 20px;
 }
 
-.wallet-warning {
+.warning {
   width: 125px;
   height: 125px;
   background-color: #0c0c0c;
@@ -59,4 +59,20 @@ body::-webkit-scrollbar-thumb {
   top: 50%;
   left: 50%;
   margin: -25px 0 0 -25px;
+}
+
+.bold {
+  font-weight: 600;
+}
+
+.orange {
+  color: #ff9900;
+}
+
+.green {
+  color: #46c000;
+}
+
+.red {
+  color: #ce0000;
 }

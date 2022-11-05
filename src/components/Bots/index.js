@@ -12,14 +12,16 @@ import {
   Link,
   Alert,
   Collapse,
+  Slide,
 } from "@mui/material";
 import { PhotoCamera, CloseOutlined } from "@mui/icons-material";
 import useMinter from "../../hooks/useMinter";
 import useNFTStorage from "../../hooks/useNFTStorage";
-import { WalletWarning } from "../WalletWarning";
+import { Warning } from "../Warning";
+import { SnackBar } from "../SnackBar";
 
 const CreateBot = ({ account, network, contract, web3 }) => {
-  const [error, setError] = useState({ field: false, account: false });
+  const [error, setError] = useState(false);
   const { image, setImage, input, setInput, state, tx, setTx, mintBot } =
     useMinter();
 
@@ -67,10 +69,12 @@ const CreateBot = ({ account, network, contract, web3 }) => {
   };
 
   const handleChange = (e) => {
-    setInput({
-      ...input,
-      [e.target.name]: e.target.value,
-    });
+    if (e.target.value.length < 11 || e.target.name === "pair") {
+      setInput({
+        ...input,
+        [e.target.name]: e.target.value,
+      });
+    }
   };
 
   const verifyData = () => {
@@ -141,6 +145,7 @@ const CreateBot = ({ account, network, contract, web3 }) => {
           label="Name"
           type="text"
           size="small"
+          value={input.name}
         />
         <TextField
           onChange={handleChange}
@@ -152,6 +157,7 @@ const CreateBot = ({ account, network, contract, web3 }) => {
           rows={1}
           maxRows={1}
           multiline
+          value={input.description}
         />
         <FormControl size="small">
           <InputLabel id="select-pair-label">Pair</InputLabel>
@@ -191,9 +197,11 @@ const CreateBot = ({ account, network, contract, web3 }) => {
         />
         <div>
           <Button
+            variant="contained"
+            color="primary"
+            disableElevation
             fullWidth
             type="submit"
-            variant="outlined"
             onClick={verifyData}
             disabled={state === "MINTING..."}
           >
@@ -201,69 +209,52 @@ const CreateBot = ({ account, network, contract, web3 }) => {
           </Button>
         </div>
       </Card>
-      <Collapse in={error.field || error.account}>
-        <Alert
-          severity="error"
-          action={
-            <IconButton
-              aria-label="close"
-              color="inherit"
-              size="small"
-              onClick={() => {
-                setError({ field: false, account: false });
-              }}
-            >
-              <CloseOutlined fontSize="inherit" />
-            </IconButton>
+      {error && (
+        <SnackBar
+          open={error.field || error.account}
+          setOpen={setError}
+          label={
+            (error.field && "Complete all fields") ||
+            (error.account && "Connect wallet")
           }
-          sx={{ mt: 2 }}
-        >
-          {error.field && "Complete all fields"}
-          {error.account && "Connect wallet"}
-        </Alert>
-      </Collapse>
+          state={"error"}
+          position={{ vertical: "down", horizontal: "left" }}
+        />
+      )}
       {tx && (
-        <Collapse in={tx}>
-          <Alert
-            severity="success"
-            action={
-              <IconButton
-                aria-label="close"
-                color="inherit"
-                size="small"
-                onClick={() => {
-                  setTx(false);
-                }}
+        <SnackBar
+          open={tx}
+          setOpen={setTx}
+          label={
+            <>
+              <span>Successfully minted!</span>
+              &nbsp;
+              <Link
+                underline="hover"
+                href={`https://mumbai.polygonscan.com/address/${tx.events.RoleGranted[0].address}`}
+                target="_blank"
+                rel="noopener"
               >
-                <CloseOutlined fontSize="inherit" />
-              </IconButton>
-            }
-            sx={{ mt: 2 }}
-          >
-            Minted! &nbsp;
-            <Link
-              underline="hover"
-              href={`https://mumbai.polygonscan.com/address/${tx.events.RoleGranted[0].address}`}
-              target="_blank"
-              rel="noopener"
-            >
-              View Bot
-            </Link>
-            &nbsp;
-            <Link
-              underline="hover"
-              href={`https://mumbai.polygonscan.com/token/${
-                tx.events[1].address
-              }?a=${web3.quickNode.utils.hexToNumber(
-                tx.events[1].raw.topics[3]
-              )}`}
-              target="_blank"
-              rel="noopener"
-            >
-              View NFT
-            </Link>
-          </Alert>
-        </Collapse>
+                View Bot
+              </Link>
+              &nbsp;
+              <Link
+                underline="hover"
+                href={`https://mumbai.polygonscan.com/token/${
+                  tx.events[1].address
+                }?a=${web3.quickNode.utils.hexToNumber(
+                  tx.events[1].raw.topics[3]
+                )}`}
+                target="_blank"
+                rel="noopener"
+              >
+                View NFT
+              </Link>
+            </>
+          }
+          state={"success"}
+          position={{ vertical: "down", horizontal: "left" }}
+        />
       )}
     </>
   );
@@ -277,39 +268,46 @@ const ListBot = ({ account, network, contract, web3, bot, setBot }) => {
   }, [web3, contract, account]);
 
   return (
-    <List>
-      {nftUserList &&
-        nftUserList.map((data, index) => {
-          return (
-            <div key={index}>
-              <div
-                className={`data-container ${
-                  data.botAddress === bot.botAddress ? "selected" : ""
-                }`}
-                onClick={() => setBot(data)}
-              >
-                <div className="nft-info">
-                  <h4 className="nft-name">{data.name}</h4>
-                  <img
-                    className="nft-image"
-                    src={`https://nftstorage.link/ipfs/${data.image.substring(
-                      7,
-                      data.image.length
-                    )}`}
-                    alt="nft"
-                  />
-                  <small className="nft-description">{data.description}</small>
-                </div>
+    <List sx={{ padding: 0 }}>
+      {nftUserList && (
+        <>
+          <div className="divider"></div>
+          {nftUserList.map((data, index) => {
+            return (
+              <div key={index}>
+                <div
+                  className={`data-container ${
+                    data.botAddress === bot.botAddress ? "selected" : ""
+                  }`}
+                  onClick={() => setBot(data)}
+                >
+                  <div className="nft-info">
+                    <img
+                      className="nft-image"
+                      src={`https://nftstorage.link/ipfs/${data.image.substring(
+                        7,
+                        data.image.length
+                      )}`}
+                      alt="nft"
+                    />
+                    <h4>{data.name}</h4>
+                  </div>
 
-                <div className="bot-info">
-                  <span>Buy: {data.buyPrice}</span>
-                  <span>Sell: {data.sellPrice}</span>
+                  <div className="bot-info">
+                    <h4>WBTC / USDC</h4>
+                    <div className="buy-sell">
+                      <span className="green">{data.buyPrice}</span>
+                      <span>&nbsp;/&nbsp;</span>
+                      <span className="red">{data.sellPrice}</span>
+                    </div>
+                  </div>
                 </div>
+                <div className="divider"></div>
               </div>
-              <div className="divider"></div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </>
+      )}
     </List>
   );
 };
@@ -331,12 +329,13 @@ export default function Bots({
           <Button
             onClick={() => setList(!list)}
             variant="contained"
-            color="success"
+            color={list ? "error" : "success"}
             disableElevation
             fullWidth
           >
-            {list ? "SHOW BOTS" : "CREATE BOT"}
+            {list ? "GRID BOTS LIST" : "MINT GRID BOT"}
           </Button>
+
           {list ? (
             <CreateBot
               account={account}
@@ -356,7 +355,7 @@ export default function Bots({
           )}
         </>
       ) : (
-        <WalletWarning />
+        <Warning label={"CONNECT WALLET"} />
       )}
     </>
   );

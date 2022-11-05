@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import debounce from "just-debounce-it";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import { Skeleton } from "@mui/material";
-import { WalletWarning } from "../WalletWarning";
+import { Warning } from "../Warning";
 import useNFTStorage from "../../hooks/useNFTStorage";
 import { Loader } from "../Loader";
 import FavoriteIcon from "@mui/icons-material/Favorite";
@@ -88,7 +88,7 @@ export default function Market({ account, network, contract, web3 }) {
           </div>
         </>
       ) : (
-        <WalletWarning />
+        <Warning label={"CONNECT WALLET"} />
       )}
     </>
   );
