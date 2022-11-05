@@ -65,25 +65,28 @@
 .bots {
   grid-area: bots;
   background-color: #0c163a;
-  overflow-y: auto;
   position: relative;
+  overflow-y: auto;
 }
 
 .chat {
   grid-area: chat;
   background-color: #0c163a;
+  overflow-y: auto;
 }
 
 .transactions {
   grid-area: transactions;
   background-color: #0c163a;
   position: relative;
+  overflow-y: auto;
 }
 
 .control {
   grid-area: control;
   background-color: #0c163a;
   position: relative;
+  overflow-y: auto;
 }
 
 /* HEADER */
@@ -225,4 +228,31 @@
   align-items: center;
   justify-content: center;
   padding: 10px;
+}
+
+/* CONTROL */
+
+.nft-profile-image {
+  width: 100%;
+  height: 270px;
+  object-fit: cover;
+}
+
+.balance {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bold {
+  font-weight: 600;
+}
+
+.bot-description {
+  width: 100%;
+  inline-size: 270px;
+  overflow-wrap: break-word;
+  word-break: break-all;
+  hyphens: auto;
 }

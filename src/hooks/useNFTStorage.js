@@ -16,7 +16,7 @@ export default function useNFTStorage() {
     return className;
   };
 
-  const getUserNfts = ({ web3, contract, account }) => {
+  const getUserNfts = ({ web3, contract, account, setBot }) => {
     const api = `http://${process.env.REACT_APP_API_URL}/api/v1/nfts`;
 
     contract.gridBotFactory.methods
@@ -54,7 +54,10 @@ export default function useNFTStorage() {
                   });
               });
           })
-        ).then((data) => setNftUserList(data));
+        ).then((data) => {
+          setBot(data[0]);
+          setNftUserList(data);
+        });
       });
   };
 

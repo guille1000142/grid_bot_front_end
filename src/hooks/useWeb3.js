@@ -3,10 +3,13 @@ import Web3 from "web3";
 import GridBotFactoryAbi from "../abis/mumbai/GridBotFactory.json";
 import NFTGridDataAbi from "../abis/mumbai/NFTGridData.json";
 import UpKeepIDRegisterFactoryAbi from "../abis/mumbai/UpKeepIDRegisterFactory.json";
+import SpotBotGridAbi from "../abis/mumbai/SpotBotGrid.json";
+import ERC20StandardAbi from "../abis/mumbai/ERC20Standard.json";
 import {
   GridBotFactoryAddress,
   NFTGridDataAddress,
   UpKeepIDRegisterFactoryAddress,
+  usdcMockAddress,
 } from "../utils/address";
 
 export default function useWeb3() {
@@ -45,7 +48,17 @@ export default function useWeb3() {
         UpKeepIDRegisterFactoryAddress
       );
 
-      setContract({ gridBotFactory, nftGridData });
+      const usdcMock = new metamask.eth.Contract(
+        ERC20StandardAbi,
+        usdcMockAddress
+      );
+
+      setContract({
+        gridBotFactory,
+        nftGridData,
+        upKeepIDRegisterFactory,
+        usdcMock,
+      });
 
       window.ethereum
         .request({ method: "eth_accounts" })
@@ -87,22 +100,21 @@ export default function useWeb3() {
     return truncatedNum / multiplier;
   };
 
-  const readBalance = () => {
-    web3.eth
-      .getBalance(account)
-      .then((balance) => {
-        const walletBalance = web3.utils.fromWei(balance.toString(), "ether");
-        const truncate = truncateDecimals(parseFloat(walletBalance), 2);
-        setBalance(truncate);
-      })
-      .catch((err) => console.log(err));
+  const readBotContract = (address) => {
+    return new web3.metamask.eth.Contract(SpotBotGridAbi, address);
   };
 
-  // useEffect(() => {
-  //   if (web3 && account && network !== "") {
-  //     readBalance();
-  //   }
-  // }, [account, network, web3]);
+  const readBalance = async () => {
+    const usdc = web3.quickNode.utils.fromWei(
+      await contract.usdcMock.methods.balanceOf(account).call(),
+      "ether"
+    );
+    const native = web3.quickNode.utils.fromWei(
+      await web3.metamask.eth.getBalance(account),
+      "ether"
+    );
+    return { usdc, native };
+  };
 
   const connectWallet = (change) => {
     if (typeof window.ethereum === "undefined") {
@@ -169,6 +181,7 @@ export default function useWeb3() {
   return {
     changeNetwork,
     connectWallet,
+    readBotContract,
     readBalance,
     account,
     network,

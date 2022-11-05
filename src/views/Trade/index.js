@@ -8,7 +8,15 @@ import useWeb3 from "../../hooks/useWeb3";
 import "./index.css";
 
 export default function Trade() {
-  const { account, network, contract, web3, connectWallet } = useWeb3();
+  const {
+    account,
+    network,
+    contract,
+    web3,
+    readBotContract,
+    readBalance,
+    connectWallet,
+  } = useWeb3();
   const [bot, setBot] = useState(false);
 
   return (
@@ -44,6 +52,8 @@ export default function Trade() {
           contract={contract}
           web3={web3}
           bot={bot}
+          readBotContract={readBotContract}
+          readBalance={readBalance}
         />
       </aside>
     </div>

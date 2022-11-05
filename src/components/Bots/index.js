@@ -2,11 +2,6 @@ import { useEffect, useState } from "react";
 import {
   Button,
   List,
-  ListItem,
-  ListItemAvatar,
-  Avatar,
-  ListItemText,
-  Divider,
   IconButton,
   Card,
   TextField,
@@ -278,20 +273,19 @@ const ListBot = ({ account, network, contract, web3, bot, setBot }) => {
   const { nftUserList, getUserNfts } = useNFTStorage();
 
   useEffect(() => {
-    getUserNfts({ web3, contract, account });
+    getUserNfts({ web3, contract, account, setBot });
   }, [web3, contract, account]);
-  console.log(bot);
+
   return (
     <List>
       {nftUserList &&
         nftUserList.map((data, index) => {
           return (
-            <>
+            <div key={index}>
               <div
                 className={`data-container ${
                   data.botAddress === bot.botAddress ? "selected" : ""
                 }`}
-                key={index}
                 onClick={() => setBot(data)}
               >
                 <div className="nft-info">
@@ -313,7 +307,7 @@ const ListBot = ({ account, network, contract, web3, bot, setBot }) => {
                 </div>
               </div>
               <div className="divider"></div>
-            </>
+            </div>
           );
         })}
     </List>
