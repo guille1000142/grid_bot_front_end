@@ -5,19 +5,14 @@ import useWeb3 from "../../hooks/useWeb3";
 import "./index.css";
 
 export default function Marketplace() {
-  const { account, network, contract, web3, connectWallet } = useWeb3();
+  const { account, contract, web3, connectWallet } = useWeb3();
   return (
     <div className="marketplace-grid-container">
       <header className="header">
         <NavBar account={account} connectWallet={connectWallet} />
       </header>
       <section className="market">
-        <Market
-          account={account}
-          network={network}
-          contract={contract}
-          web3={web3}
-        />
+        <Market account={account} contract={contract} web3={web3} />
       </section>
     </div>
   );

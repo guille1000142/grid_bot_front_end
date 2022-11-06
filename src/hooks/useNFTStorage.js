@@ -2,7 +2,12 @@ import { useState } from "react";
 
 export default function useNFTStorage() {
   const [nftUserList, setNftUserList] = useState(false);
-  const [nftGlobalList, setNftGlobalList] = useState(false);
+  const [nftGlobalList, setNftGlobalList] = useState([]);
+  const [cidsGlobalList, setCidsGlobalList] = useState(false);
+
+  const getCidUrl = (uri) => {
+    return /^(\w+):\/\/([^\/]+)([^]+)$/.exec(uri);
+  };
 
   const randomPosition = (max) => {
     const number = Math.floor(Math.random() * max);
@@ -34,20 +39,23 @@ export default function useNFTStorage() {
                   .tokenURI(data.nftID)
                   .call()
                   .then((uri) => {
-                    const cid = /^(\w+):\/\/([^\/]+)([^]+)$/.exec(uri);
-                    return fetch(`${api}/${cid[2]}`, {
+                    const metadataCid = getCidUrl(uri);
+                    return fetch(`${api}/${metadataCid[2]}`, {
                       method: "GET",
                       headers: {
                         "Content-Type": "application/json",
                       },
                     }).then((res) => {
                       return res.json().then((metadata) => {
+                        const imageCid = getCidUrl(metadata.image);
                         return {
                           botAddress: data.gridBotAddress,
                           buyPrice: data.buyPrice_,
                           sellPrice: data.sellPrice_,
-                          cid: cid[2],
-                          ...metadata,
+                          cid: metadataCid[2],
+                          name: metadata.name,
+                          description: metadata.description,
+                          image: imageCid[2],
                         };
                       });
                     });
@@ -63,42 +71,56 @@ export default function useNFTStorage() {
 
   const getGlobalNfts = () => {
     const date = encodeURI(new Date().toISOString());
-    const filter = 500;
+    const limit = 1000;
     const gateway = "https://api.nft.storage/";
-    const api = `http://${process.env.REACT_APP_API_URL}/api/v1/nfts`;
 
-    fetch(`${gateway}?before=${date}&limit=${filter}`, {
+    fetch(`${gateway}?before=${date}&limit=${limit}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${process.env.REACT_APP_NFT_STORAGE_KEY}`,
       },
     }).then((res) => {
-      res.json().then((nfts) => {
-        Promise.all(
-          nfts.value.map((nft) => {
-            const position = randomPosition(3);
-            return fetch(`${api}/${nft.cid}`, {
-              method: "GET",
-              headers: {
-                "Content-Type": "application/json",
-              },
-            }).then((res) => {
-              return res.json().then((metadata) => {
-                return { ...metadata, position };
-              });
-            });
-          })
-        ).then((data) => setNftGlobalList(data));
+      res.json().then((cids) => {
+        setCidsGlobalList(cids.value);
       });
     });
+  };
+
+  const readLimitNFT = ({ cids, from, to, actualData }) => {
+    const api = `http://${process.env.REACT_APP_API_URL}/api/v1/nfts`;
+
+    Promise.all(
+      cids.slice(from, to).map((data) => {
+        const position = randomPosition(3);
+        return fetch(`${api}/${data.cid}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }).then((res) => {
+          return res.json().then((metadata) => {
+            const imageCid = getCidUrl(metadata.image);
+            return {
+              name: metadata.name,
+              description: metadata.description,
+              image: imageCid[2],
+              position,
+              createdAt: new Date(data.created).toISOString(),
+            };
+          });
+        });
+      })
+    ).then((nfts) => setNftGlobalList([...actualData, ...nfts]));
   };
 
   return {
     nftUserList,
     nftGlobalList,
+    cidsGlobalList,
     getUserNfts,
     getGlobalNfts,
+    readLimitNFT,
     randomPosition,
   };
 }

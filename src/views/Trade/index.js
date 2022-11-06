@@ -10,15 +10,14 @@ import "./index.css";
 export default function Trade() {
   const {
     account,
-    network,
     contract,
     web3,
     readBotContract,
     readBalance,
     connectWallet,
+    switchNetwork,
   } = useWeb3();
   const [bot, setBot] = useState(false);
-  console.log(contract);
   return (
     <div className="trade-grid-container">
       <header className="header">
@@ -27,11 +26,11 @@ export default function Trade() {
       <nav className="bots">
         <Bots
           account={account}
-          network={network}
           contract={contract}
           web3={web3}
           bot={bot}
           setBot={setBot}
+          switchNetwork={switchNetwork}
         />
       </nav>
       <section className="chat">
@@ -40,7 +39,6 @@ export default function Trade() {
       <article className="transactions">
         <Transactions
           account={account}
-          network={network}
           contract={contract}
           web3={web3}
           bot={bot}
@@ -49,12 +47,12 @@ export default function Trade() {
       <aside className="control">
         <Control
           account={account}
-          network={network}
           contract={contract}
           web3={web3}
           bot={bot}
           readBotContract={readBotContract}
           readBalance={readBalance}
+          switchNetwork={switchNetwork}
         />
       </aside>
     </div>

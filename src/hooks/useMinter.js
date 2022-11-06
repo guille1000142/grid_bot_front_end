@@ -14,7 +14,7 @@ export default function useMinter() {
     buyPrice: "",
     sellPrice: "",
   });
-  const [state, setState] = useState("MINT NFT BOT");
+  const [state, setState] = useState("MINT GRID BOT");
   const [tx, setTx] = useState(false);
 
   const mintBot = async ({ web3, account, contract }) => {
@@ -26,7 +26,6 @@ export default function useMinter() {
         image: image,
       })
       .then((metadata) => {
-        console.log(contract.metamask.gridBotFactory.methods);
         contract.metamask.gridBotFactory.methods
           .factoryNewGrid(
             input.name,
@@ -54,7 +53,7 @@ export default function useMinter() {
               buyPrice: "",
               sellPrice: "",
             });
-            setState("MINT NFT BOT");
+            setState("MINT GRID BOT");
             setTx(receipt);
           })
           .on("error", (err, receipt) => {

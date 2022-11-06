@@ -11,64 +11,63 @@ import {
   UpKeepIDRegisterFactoryAddress,
   usdcMockAddress,
 } from "../utils/address";
+import { mumbai, quickNodeRPC } from "../utils/network";
+import useNetwork from "./useNetwork";
 
 export default function useWeb3() {
   const [maticPrice, setMaticPrice] = useState(false);
   const [account, setAccount] = useState(false);
-  const [network, setNetwork] = useState("");
+  const [network, setNetwork] = useState(false);
   const [balance, setBalance] = useState(0);
   const [web3, setWeb3] = useState(false);
   const [contract, setContract] = useState(false);
+  const { changeNetwork } = useNetwork();
 
   useEffect(() => {
-    // QUICKNODE RPC
-    const quickNodeProvider = `wss://${process.env.REACT_APP_QUICKNODE_RPC}`;
     const quickNode = new Web3(
-      new Web3.providers.WebsocketProvider(quickNodeProvider)
+      new Web3.providers.WebsocketProvider(quickNodeRPC.mumbai)
     );
-
-    // METAMASK WALLET
 
     if (typeof window.ethereum !== "undefined") {
       const metamask = new Web3(window.ethereum);
       setWeb3({ quickNode, metamask });
 
-      const gridBotFactoryQ = new metamask.eth.Contract(
+      const gridBotFactoryM = new metamask.eth.Contract(
         JSON.parse(GridBotFactoryAbi.result),
         GridBotFactoryAddress
       );
 
-      const nftGridDataQ = new metamask.eth.Contract(
+      const nftGridDataM = new metamask.eth.Contract(
         JSON.parse(NFTGridDataAbi.result),
         NFTGridDataAddress
       );
 
-      const upKeepIDRegisterFactoryQ = new metamask.eth.Contract(
+      const upKeepIDRegisterFactoryM = new metamask.eth.Contract(
         JSON.parse(UpKeepIDRegisterFactoryAbi.result),
         UpKeepIDRegisterFactoryAddress
       );
 
-      const usdcMockQ = new metamask.eth.Contract(
+      const usdcMockM = new metamask.eth.Contract(
         ERC20StandardAbi,
         usdcMockAddress
       );
 
-      const gridBotFactoryM = new quickNode.eth.Contract(
+      const gridBotFactoryQ = new quickNode.eth.Contract(
         JSON.parse(GridBotFactoryAbi.result),
         GridBotFactoryAddress
       );
 
-      const nftGridDataM = new quickNode.eth.Contract(
+      const nftGridDataQ = new quickNode.eth.Contract(
         JSON.parse(NFTGridDataAbi.result),
         NFTGridDataAddress
       );
 
-      const upKeepIDRegisterFactoryM = new quickNode.eth.Contract(
+      const upKeepIDRegisterFactoryQ = new quickNode.eth.Contract(
         JSON.parse(UpKeepIDRegisterFactoryAbi.result),
         UpKeepIDRegisterFactoryAddress
       );
 
-      const usdcMockM = new quickNode.eth.Contract(
+      const usdcMockQ = new quickNode.eth.Contract(
         ERC20StandardAbi,
         usdcMockAddress
       );
@@ -119,6 +118,21 @@ export default function useWeb3() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (account && network) {
+      switchNetwork();
+    }
+  }, [account, network]);
+
+  const switchNetwork = () => {
+    if (network !== mumbai.chainId) {
+      changeNetwork(mumbai);
+      return false;
+    } else {
+      return true;
+    }
+  };
 
   const truncateDecimals = function (number, digits) {
     var multiplier = Math.pow(10, digits),
@@ -181,49 +195,13 @@ export default function useWeb3() {
     }
   };
 
-  // PENDIENTE DE TERMINAR : MUMBAI Y POLYGON
-  const addNetwork = ({ chainId }) => {
-    window.ethereum.request({
-      method: "wallet_addEthereumChain",
-      params: [
-        {
-          chainId: chainId,
-          chainName: chainId === "0x89" ? "POLYGON" : "BSC",
-          rpcUrls: [
-            chainId === "0x89"
-              ? "https://polygon-rpc.com"
-              : "https://bscrpc.com",
-          ],
-          nativeCurrency: {
-            name: chainId === "0x89" ? "MATIC" : "BNB",
-            symbol: chainId === "0x89" ? "MATIC" : "BNB",
-            decimals: 18,
-          },
-        },
-      ],
-    });
-  };
-
-  const changeNetwork = ({ chainId }) => {
-    window.ethereum
-      .request({
-        method: "wallet_switchEthereumChain",
-        params: [{ chainId: chainId }],
-      })
-      .catch((err) => {
-        if (err.code === 4902) {
-          addNetwork({ chainId });
-        }
-      });
-  };
-
   return {
     changeNetwork,
     connectWallet,
     readBotContract,
     readBalance,
+    switchNetwork,
     account,
-    network,
     balance,
     web3,
     contract,

@@ -10,17 +10,14 @@ import {
   Select,
   MenuItem,
   Link,
-  Alert,
-  Collapse,
-  Slide,
 } from "@mui/material";
-import { PhotoCamera, CloseOutlined } from "@mui/icons-material";
+import { PhotoCamera } from "@mui/icons-material";
 import useMinter from "../../hooks/useMinter";
 import useNFTStorage from "../../hooks/useNFTStorage";
 import { Warning } from "../Warning";
 import { SnackBar } from "../SnackBar";
 
-const CreateBot = ({ account, network, contract, web3 }) => {
+const CreateBot = ({ account, contract, web3, switchNetwork }) => {
   const [error, setError] = useState(false);
   const { image, setImage, input, setInput, state, tx, setTx, mintBot } =
     useMinter();
@@ -66,9 +63,27 @@ const CreateBot = ({ account, network, contract, web3 }) => {
       setImage(file);
       reader.readAsDataURL(file);
     }
+
+    const image = new Image();
+    image.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      canvas.getContext("2d").drawImage(image, 0, 0);
+      canvas.toBlob((blob) => {
+        const webpImage = new File([blob], "nft-image.webp", {
+          type: blob.type,
+        });
+        console.log(webpImage);
+        setImage(webpImage);
+      }, "image/webp");
+    };
+
+    image.src = URL.createObjectURL(file);
   };
 
   const handleChange = (e) => {
+    e.preventDefault();
     if (e.target.value.length < 11 || e.target.name === "pair") {
       setInput({
         ...input,
@@ -80,6 +95,11 @@ const CreateBot = ({ account, network, contract, web3 }) => {
   const verifyData = () => {
     if (!account) {
       setError({ field: false, account: true });
+      return false;
+    }
+
+    const isConnected = switchNetwork();
+    if (!isConnected) {
       return false;
     }
 
@@ -218,7 +238,7 @@ const CreateBot = ({ account, network, contract, web3 }) => {
             (error.account && "Connect wallet")
           }
           state={"error"}
-          position={{ vertical: "down", horizontal: "left" }}
+          position={{ vertical: "bottom", horizontal: "left" }}
         />
       )}
       {tx && (
@@ -260,7 +280,7 @@ const CreateBot = ({ account, network, contract, web3 }) => {
   );
 };
 
-const ListBot = ({ account, network, contract, web3, bot, setBot }) => {
+const ListBot = ({ account, contract, web3, bot, setBot }) => {
   const { nftUserList, getUserNfts } = useNFTStorage();
 
   useEffect(() => {
@@ -272,33 +292,30 @@ const ListBot = ({ account, network, contract, web3, bot, setBot }) => {
       {nftUserList && (
         <>
           <div className="divider"></div>
-          {nftUserList.map((data, index) => {
+          {nftUserList.map((nft, index) => {
             return (
               <div key={index}>
                 <div
                   className={`data-container ${
-                    data.botAddress === bot.botAddress ? "selected" : ""
+                    nft.botAddress === bot.botAddress ? "selected" : ""
                   }`}
-                  onClick={() => setBot(data)}
+                  onClick={() => setBot(nft)}
                 >
                   <div className="nft-info">
                     <img
                       className="nft-image"
-                      src={`https://nftstorage.link/ipfs/${data.image.substring(
-                        7,
-                        data.image.length
-                      )}`}
+                      src={`https://${nft.image}.ipfs.nftstorage.link/nft-image.webp`}
                       alt="nft"
                     />
-                    <h4>{data.name}</h4>
+                    <h4>{nft.name}</h4>
                   </div>
 
                   <div className="bot-info">
                     <h4>WBTC / USDC</h4>
                     <div className="buy-sell">
-                      <span className="green">{data.buyPrice}</span>
+                      <span className="green">{nft.buyPrice}</span>
                       <span>&nbsp;/&nbsp;</span>
-                      <span className="red">{data.sellPrice}</span>
+                      <span className="red">{nft.sellPrice}</span>
                     </div>
                   </div>
                 </div>
@@ -314,17 +331,17 @@ const ListBot = ({ account, network, contract, web3, bot, setBot }) => {
 
 export default function Bots({
   account,
-  network,
   contract,
   web3,
   bot,
   setBot,
+  switchNetwork,
 }) {
   const [list, setList] = useState(false);
 
   return (
     <>
-      {account && network && contract && web3 ? (
+      {account && contract && web3 ? (
         <>
           <Button
             onClick={() => setList(!list)}
@@ -339,14 +356,13 @@ export default function Bots({
           {list ? (
             <CreateBot
               account={account}
-              network={network}
               contract={contract}
               web3={web3}
+              switchNetwork={switchNetwork}
             />
           ) : (
             <ListBot
               account={account}
-              network={network}
               contract={contract}
               web3={web3}
               bot={bot}

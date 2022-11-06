@@ -5,12 +5,12 @@ import { SnackBar } from "../SnackBar";
 
 export default function Control({
   account,
-  network,
   contract,
   web3,
   bot,
   readBotContract,
   readBalance,
+  switchNetwork,
 }) {
   const [state, setState] = useState(false);
   const [error, setError] = useState(false);
@@ -18,14 +18,8 @@ export default function Control({
   const [data, setData] = useState(false);
   const [addBalance, setAddBalance] = useState(0);
   const [botContract, setBotContract] = useState(false);
-
-  const handleChange = (e) => {
-    setAddBalance(parseFloat(e.target.value));
-  };
-
-  const handleChangeSlider = (event, value) => {
-    setAddBalance((data.wallet.usdc * value) / 100);
-  };
+  const [withdraw, setWithdraw] = useState(false);
+  const [deposit, setDeposit] = useState({ approve: false, deposit: false });
 
   useEffect(() => {
     if (bot && web3) {
@@ -38,11 +32,13 @@ export default function Control({
     setBotContract(spotContract);
 
     const usdcBalance = web3.quickNode.utils.fromWei(
-      await spotContract.metamask.spotBotGrid.methods.getBalanceStable().call(),
+      await spotContract.quickNode.spotBotGrid.methods
+        .getBalanceStable()
+        .call(),
       "ether"
     );
     const pairBalance = web3.quickNode.utils.fromWei(
-      await spotContract.metamask.spotBotGrid.methods
+      await spotContract.quickNode.spotBotGrid.methods
         .getBalanceTradeableToken()
         .call(),
       "ether"
@@ -60,6 +56,17 @@ export default function Control({
   };
 
   const approveBalance = () => {
+    if (!account) {
+      setError({ field: false, account: true });
+      return false;
+    }
+
+    const isConnected = switchNetwork();
+    if (!isConnected) {
+      return false;
+    }
+
+    setDeposit({ deposit: false, approve: true });
     contract.usdcMock.methods
       .approve(
         bot.botAddress,
@@ -74,10 +81,12 @@ export default function Control({
         // gasLimit: 500000,
       })
       .on("receipt", (receipt) => {
+        setDeposit({ deposit: false, approve: false });
         setTx({ withdraw: receipt });
         setState(!state);
       })
       .on("error", (err, receipt) => {
+        setDeposit({ deposit: false, approve: false });
         if (err.code === -32603) {
           console.error("This transaction needs more gas to be executed");
           return false;
@@ -98,7 +107,12 @@ export default function Control({
       setError({ field: false, account: true });
       return false;
     }
-    console.log(contract);
+
+    const isConnected = switchNetwork();
+    if (!isConnected) {
+      return false;
+    }
+
     if (
       addBalance <= 0 ||
       addBalance > data.walletBalance.usdc ||
@@ -108,16 +122,24 @@ export default function Control({
       return false;
     }
 
+    setDeposit({ deposit: true, approve: false });
     contract.metamask.usdcMock.methods
       .transfer(
         bot.botAddress,
         web3.quickNode.utils.toWei(addBalance.toString(), "ether")
       )
+      .send({
+        from: account,
+        // gasPrice: web3.utils.toWei(gas.fastest.toString(), "gwei"),
+        // gasLimit: 500000,
+      })
       .on("receipt", (receipt) => {
+        setDeposit({ deposit: false, approve: false });
         setTx({ deposit: receipt });
         setState(!state);
       })
       .on("error", (err, receipt) => {
+        setDeposit({ deposit: false, approve: false });
         if (err.code === -32603) {
           console.error("This transaction needs more gas to be executed");
           return false;
@@ -134,11 +156,22 @@ export default function Control({
   };
 
   const withdrawBalance = () => {
+    if (!account) {
+      setError({ field: false, account: true });
+      return false;
+    }
+
+    const isConnected = switchNetwork();
+    if (!isConnected) {
+      return false;
+    }
+
     if (data.bot.usdc <= 0 && data.bot.pair <= 0) {
       setError({ field: true, account: false });
       return false;
     }
 
+    setWithdraw(true);
     botContract.metamask.spotBotGrid.methods
       .withdraw()
       .send({
@@ -147,9 +180,11 @@ export default function Control({
         // gasLimit: 500000,
       })
       .on("receipt", (receipt) => {
+        setWithdraw(false);
         setState(!state);
       })
       .on("error", (err, receipt) => {
+        setWithdraw(false);
         if (err.code === -32603) {
           console.error("This transaction needs more gas to be executed");
           return false;
@@ -164,10 +199,24 @@ export default function Control({
         }
       });
   };
-  console.log(tx);
+
+  const handleChange = (e) => {
+    e.preventDefault();
+    setAddBalance(parseFloat(e.target.value));
+  };
+
+  const handleChangeSlider = (e, value) => {
+    e.preventDefault();
+    setAddBalance((parseFloat(data.walletBalance.usdc) * value) / 100);
+  };
+
+  const getAriaValueText = (value) => {
+    return `${value}%`;
+  };
+
   return (
     <>
-      {account && network && contract && web3 ? (
+      {account && contract && web3 ? (
         <>
           {bot && data ? (
             <Card
@@ -217,9 +266,11 @@ export default function Control({
                 disableElevation
                 fullWidth
                 onClick={withdrawBalance}
-                disabled={data.bot.usdc <= 0 && data.bot.pair <= 0}
+                disabled={
+                  (data.bot.usdc <= 0 && data.bot.pair <= 0) || withdraw
+                }
               >
-                WITHDRAW ALL
+                {withdraw ? "WITHDRAWING..." : "WITHDRAW ALL"}
               </Button>
               &nbsp;
               <h4>Wallet</h4>
@@ -240,7 +291,7 @@ export default function Control({
                 aria-label="%"
                 onChange={handleChangeSlider}
                 defaultValue={0}
-                getAriaValueText={0}
+                getAriaValueText={getAriaValueText}
                 valueLabelDisplay="auto"
                 step={20}
                 marks
@@ -252,6 +303,7 @@ export default function Control({
                 <span className="bold">{data.walletBalance.usdc} USDC</span>
               </div>
               <Button
+                disabled={deposit.approve || deposit.deposit}
                 variant="contained"
                 color="primary"
                 disableElevation
@@ -260,7 +312,11 @@ export default function Control({
                   data.allowance === "0" ? approveBalance : depositBalance
                 }
               >
-                {data.allowance === "0" ? "Approve" : "Deposit"}
+                {!deposit.deposit && !deposit.approve && (
+                  <>{data.allowance === "0" ? "APPROVE" : "DEPOSIT"}</>
+                )}
+                {deposit.approve && "APPROVING..."}
+                {deposit.deposit && "DEPOSITING..."}
               </Button>
               {error && (
                 <SnackBar
@@ -271,7 +327,7 @@ export default function Control({
                     (error.account && "Connect wallet")
                   }
                   state={"error"}
-                  position={{ vertical: "down", horizontal: "right" }}
+                  position={{ vertical: "bottom", horizontal: "right" }}
                 />
               )}
               {tx && (
@@ -288,16 +344,20 @@ export default function Control({
                       &nbsp;
                       <Link
                         underline="hover"
-                        href={`https://mumbai.polygonscan.com/tx/${tx.hash}`}
+                        href={`https://mumbai.polygonscan.com/tx/${
+                          tx.withdraw
+                            ? tx.withdraw.transactionHash
+                            : tx.deposit.transactionHash
+                        }`}
                         target="_blank"
                         rel="noopener"
                       >
-                        View Bot
+                        View TX
                       </Link>
                     </>
                   }
                   state={"success"}
-                  position={{ vertical: "down", horizontal: "right" }}
+                  position={{ vertical: "bottom", horizontal: "right" }}
                 />
               )}
             </Card>

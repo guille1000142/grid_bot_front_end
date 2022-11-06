@@ -243,3 +243,8 @@
   align-items: center;
   justify-content: flex-end;
 }
+
+.widget-container {
+  color: blue;
+  background-color: red;
+}

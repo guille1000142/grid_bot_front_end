@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import debounce from "just-debounce-it";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import { Skeleton } from "@mui/material";
@@ -8,53 +8,84 @@ import { Loader } from "../Loader";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import useNearScreen from "../../hooks/useNearScreen";
 
-export default function Market({ account, network, contract, web3 }) {
-  const { nftGlobalList, getGlobalNfts, randomPosition } = useNFTStorage();
-  const [items, setItems] = useState(20);
+export default function Market({ account, contract, web3 }) {
+  const {
+    nftGlobalList,
+    cidsGlobalList,
+    getGlobalNfts,
+    randomPosition,
+    readLimitNFT,
+  } = useNFTStorage();
+  const [from, setFrom] = useState(0);
+  const [to, setTo] = useState(10);
   const skeletonList = useMemo(
-    () => [...Array(500)].map((x) => randomPosition(3)),
+    () => [...Array(10)].map((x) => randomPosition(3)),
     []
   );
   const screenRef = useRef();
   const { isNearScreen } = useNearScreen({
-    externalRef: screenRef,
+    externalRef: nftGlobalList.length > 0 ? screenRef : null,
     once: false,
   });
 
   useEffect(() => {
-    if (nftGlobalList) {
-      setItems(20);
-    } else {
-      getGlobalNfts();
-    }
-  }, [nftGlobalList]);
-
-  const debounceHandleLoad = useCallback(
-    debounce(() => {
-      setItems((prevState) => prevState + 20);
-    }, 250),
-    []
-  );
+    getGlobalNfts();
+  }, []);
 
   useEffect(() => {
-    if (isNearScreen) debounceHandleLoad();
-  }, [debounceHandleLoad, isNearScreen]);
+    if (isNearScreen && nftGlobalList.length === to) {
+      setFrom((prevState) => prevState + 10);
+      setTo((prevState) => prevState + 10);
+    }
+  }, [isNearScreen, nftGlobalList, to]);
 
+  useEffect(() => {
+    if (
+      nftGlobalList.length < to &&
+      cidsGlobalList.length > 0 &&
+      nftGlobalList.length < cidsGlobalList.length
+    ) {
+      readLimitNFT({
+        cids: cidsGlobalList,
+        from,
+        to: cidsGlobalList.length > to ? to : cidsGlobalList.length,
+        actualData: nftGlobalList,
+      });
+    }
+  }, [nftGlobalList, from, to, cidsGlobalList]);
+
+  const SkeletonImage = ({ limit }) => {
+    return skeletonList.slice(0, limit).map((position, index) => (
+      <div className={position} key={index}>
+        <div className="picture">
+          <div className="front">
+            <Skeleton
+              sx={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+              }}
+              variant="rectangular"
+            />
+          </div>
+          <div className="back"></div>
+        </div>
+      </div>
+    ));
+  };
+  console.log(nftGlobalList);
   return (
     <>
-      {account && network && contract && web3 ? (
+      {account && contract && web3 ? (
         <>
           <div className="masonry-container">
-            {nftGlobalList &&
-              nftGlobalList.slice(0, items).map((nft, index) => (
+            {nftGlobalList.length > 0 &&
+              nftGlobalList.map((nft, index) => (
                 <div className={nft.position} key={index}>
                   <div className="picture">
                     <div className="front">
                       <img
-                        src={`https://nftstorage.link/ipfs/${nft.image.substring(
-                          7,
-                          nft.image.length
-                        )}`}
+                        src={`https://${nft.image}.ipfs.nftstorage.link/nft-image.webp`}
                         alt=""
                       />
                     </div>
@@ -63,28 +94,16 @@ export default function Market({ account, network, contract, web3 }) {
                       <span>{nft.description}</span>
                     </div>
                   </div>
+                  <div id="final-page" ref={screenRef}></div>
                 </div>
               ))}
+            {skeletonList && nftGlobalList.length === 0 && (
+              <SkeletonImage limit={6} />
+            )}
             {skeletonList &&
-              !nftGlobalList &&
-              skeletonList.slice(0, items).map((position, index) => (
-                <div className={position} key={index}>
-                  <div className="picture">
-                    <div className="front">
-                      <Skeleton
-                        sx={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                        }}
-                        variant="rectangular"
-                      />
-                    </div>
-                    <div className="back"></div>
-                  </div>
-                </div>
-              ))}
-            <div id="final-page" ref={screenRef}></div>
+              nftGlobalList.length !== cidsGlobalList.length &&
+              nftGlobalList.length < to &&
+              nftGlobalList.length !== 0 && <SkeletonImage limit={6} />}
           </div>
         </>
       ) : (

@@ -9,7 +9,8 @@ export default function Chart() {
           height: "100%",
           // autosize: true,
           symbol: "UNISWAP3POLYGON:WBTCUSDC",
-          interval: "1",
+          interval: "1H",
+          range: "1D",
           timezone: "Etc/UTC",
           theme: "dark",
           style: "1",
@@ -17,7 +18,7 @@ export default function Chart() {
           toolbar_bg: "#f1f3f6",
           enable_publishing: false,
           allow_symbol_change: false,
-          container_id: "tradingview_baf71",
+          container_id: "uniswap-v3-pair",
         }}
       />
     </>
