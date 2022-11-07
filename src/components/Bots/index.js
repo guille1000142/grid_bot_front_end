@@ -33,7 +33,7 @@ const CreateBot = ({ account, contract, web3, switchNetwork }) => {
       iconButton.style.opacity = "0";
     };
 
-    if (image === "") {
+    if (image.file === "") {
       iconButton.style.opacity = "1";
       iconButton.removeEventListener("mouseover", addOpacity);
       iconButton.removeEventListener("mouseleave", removeOpacity);
@@ -53,33 +53,39 @@ const CreateBot = ({ account, contract, web3, switchNetwork }) => {
     const file = document.querySelector("#input-photo").files[0];
     const preview = document.querySelector("#preview-photo");
     const reader = new FileReader();
+    const imageObject = new Image();
+
+    if (file) {
+      reader.readAsDataURL(file);
+      imageObject.src = URL.createObjectURL(file);
+    }
 
     reader.addEventListener("load", () => {
+      setImage({
+        file: "loading",
+        width: "",
+        height: "",
+      });
       preview.src = reader.result;
       preview.style.visibility = "visible";
     });
 
-    if (file) {
-      setImage(file);
-      reader.readAsDataURL(file);
-    }
-
-    const image = new Image();
-    image.onload = () => {
+    imageObject.onload = () => {
       const canvas = document.createElement("canvas");
-      canvas.width = image.naturalWidth;
-      canvas.height = image.naturalHeight;
-      canvas.getContext("2d").drawImage(image, 0, 0);
+      canvas.width = imageObject.naturalWidth;
+      canvas.height = imageObject.naturalHeight;
+      canvas.getContext("2d").drawImage(imageObject, 0, 0);
       canvas.toBlob((blob) => {
         const webpImage = new File([blob], "nft-image.webp", {
           type: blob.type,
         });
-        console.log(webpImage);
-        setImage(webpImage);
+        setImage({
+          file: webpImage,
+          width: Math.round(imageObject.naturalWidth),
+          height: Math.round(imageObject.naturalHeight),
+        });
       }, "image/webp");
     };
-
-    image.src = URL.createObjectURL(file);
   };
 
   const handleChange = (e) => {
@@ -104,7 +110,8 @@ const CreateBot = ({ account, contract, web3, switchNetwork }) => {
     }
 
     if (
-      !image ||
+      image.file === "loading" ||
+      image.file === "" ||
       input.name === "" ||
       input.description === "" ||
       input.pair === "" ||
@@ -115,7 +122,7 @@ const CreateBot = ({ account, contract, web3, switchNetwork }) => {
       return false;
     }
 
-    mintBot({ web3, account, contract });
+    mintBot(web3, account, contract);
   };
 
   return (
@@ -304,7 +311,7 @@ const ListBot = ({ account, contract, web3, bot, setBot }) => {
                   <div className="nft-info">
                     <img
                       className="nft-image"
-                      src={`https://${nft.image}.ipfs.nftstorage.link/nft-image.webp`}
+                      src={`https://${nft.image}.ipfs.nftstorage.link/nft-image.avif`}
                       alt="nft"
                     />
                     <h4>{nft.name}</h4>

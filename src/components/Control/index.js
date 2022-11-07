@@ -232,10 +232,7 @@ export default function Control({
               <h3>{bot.name}</h3>
               <img
                 className="nft-profile-image"
-                src={`https://nftstorage.link/ipfs/${bot.image.substring(
-                  7,
-                  bot.image.length
-                )}`}
+                src={`https://${bot.image}.ipfs.nftstorage.link/nft-image.avif`}
                 alt="nft"
               />
               <h4>Grid Bot</h4>

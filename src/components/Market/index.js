@@ -85,7 +85,7 @@ export default function Market({ account, contract, web3 }) {
                   <div className="picture">
                     <div className="front">
                       <img
-                        src={`https://${nft.image}.ipfs.nftstorage.link/nft-image.webp`}
+                        src={`https://${nft.image}.ipfs.nftstorage.link/nft-image.avif`}
                         alt=""
                       />
                     </div>
