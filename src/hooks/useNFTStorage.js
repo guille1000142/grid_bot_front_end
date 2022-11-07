@@ -22,7 +22,7 @@ export default function useNFTStorage() {
   };
 
   const getUserNfts = ({ web3, contract, account, setBot }) => {
-    const api = `http://${process.env.REACT_APP_API_URL}/api/v1/nfts`;
+    const api = `${process.env.REACT_APP_API_URL}/api/v1/nfts`;
 
     contract.quickNode.gridBotFactory.methods
       .getTotalNumberOfGrid(account)

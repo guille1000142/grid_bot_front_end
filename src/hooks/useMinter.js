@@ -47,7 +47,7 @@ export default function useMinter() {
   const resizeImage = () => {
     const dimensions = calculateDimensions();
     const { file } = image;
-    const api = `http://${process.env.REACT_APP_API_URL}/api/v1`;
+    const api = `${process.env.REACT_APP_API_URL}/api/v1`;
 
     const formData = new FormData();
     formData.append("image", file, file.name);
