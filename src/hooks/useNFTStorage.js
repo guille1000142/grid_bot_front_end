@@ -21,8 +21,8 @@ export default function useNFTStorage() {
     return className;
   };
 
-  const getUserNfts = ({ web3, contract, account, setBot }) => {
-    const api = `${process.env.REACT_APP_API_URL}/api/v1/nfts`;
+  const getUserNfts = ({ contract, account, setBot }) => {
+    const api = `${process.env.REACT_APP_API_URL}/api/v1/nft/metadata`;
 
     contract.quickNode.gridBotFactory.methods
       .getTotalNumberOfGrid(account)
@@ -69,7 +69,7 @@ export default function useNFTStorage() {
       });
   };
 
-  const getGlobalNfts = () => {
+  const getGlobalNfts = (account) => {
     const date = encodeURI(new Date().toISOString());
     const limit = 1000;
     const gateway = "https://api.nft.storage/";
@@ -87,8 +87,8 @@ export default function useNFTStorage() {
     });
   };
 
-  const readLimitNFT = ({ cids, from, to, actualData }) => {
-    const api = `http://${process.env.REACT_APP_API_URL}/api/v1/nfts`;
+  const readLimitNFT = ({ cids, from, to, actualData, account }) => {
+    const api = `${process.env.REACT_APP_API_URL}/api/v1/nft/metadata`;
 
     Promise.all(
       cids.slice(from, to).map((data) => {
@@ -101,12 +101,19 @@ export default function useNFTStorage() {
         }).then((res) => {
           return res.json().then((metadata) => {
             const imageCid = getCidUrl(metadata.image);
+            const { value, wallets } = metadata.likes;
+            const isWallet = wallets.find(
+              (wallet) => wallet.toLowerCase() === account
+            );
             return {
+              cid: metadata._id,
               name: metadata.name,
               description: metadata.description,
               image: imageCid[2],
               position,
               createdAt: new Date(data.created).toISOString(),
+              likes: value,
+              isWallet: isWallet !== undefined ? true : false,
             };
           });
         });

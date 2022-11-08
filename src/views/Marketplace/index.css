@@ -127,3 +127,14 @@
     grid-column: unset;
   }
 }
+
+.likes {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+}
+
+.heart {
+  cursor: pointer;
+}

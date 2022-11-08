@@ -17,7 +17,7 @@ import useNFTStorage from "../../hooks/useNFTStorage";
 import { Warning } from "../Warning";
 import { SnackBar } from "../SnackBar";
 
-const CreateBot = ({ account, contract, web3, switchNetwork }) => {
+const CreateBot = ({ account, contract, web3, switchNetwork, setList }) => {
   const [error, setError] = useState(false);
   const { image, setImage, input, setInput, state, tx, setTx, mintBot } =
     useMinter();
@@ -122,7 +122,7 @@ const CreateBot = ({ account, contract, web3, switchNetwork }) => {
       return false;
     }
 
-    mintBot(web3, account, contract);
+    mintBot(web3, account, contract, setList);
   };
 
   return (
@@ -366,6 +366,7 @@ export default function Bots({
               contract={contract}
               web3={web3}
               switchNetwork={switchNetwork}
+              setList={setList}
             />
           ) : (
             <ListBot

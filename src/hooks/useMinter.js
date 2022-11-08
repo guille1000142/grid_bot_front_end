@@ -47,34 +47,49 @@ export default function useMinter() {
   const resizeImage = () => {
     const dimensions = calculateDimensions();
     const { file } = image;
-    const api = `${process.env.REACT_APP_API_URL}/api/v1`;
+    const api = `${process.env.REACT_APP_API_URL}/api/v1/converter/image`;
 
     const formData = new FormData();
     formData.append("image", file, file.name);
     formData.append("dimensions", dimensions);
 
-    return fetch(`${api}/converter`, {
+    return fetch(api, {
       method: "POST",
       body: formData,
     }).then((res) => {
       return res.json().then((data) => {
         const blob = b64toBlob(data.b64Data, data.contentType);
-        // const blobUrl = URL.createObjectURL(blob);
-        return blob;
+        const imageFile = new File([blob], "nft-image.avif", {
+          type: "image/avif",
+        });
+        return imageFile;
       });
     });
   };
 
-  const uploadMetadataNFT = (blob) => {
-    const imageFile = new File([blob], "nft-image.avif", {
-      type: "image/avif",
-    });
-    console.log(imageFile);
+  const uploadMetadataNFT = (imageFile) => {
     return client.store({
       name: input.name,
       description: input.description,
       image: imageFile,
     });
+  };
+
+  const createDbDoc = (tokenUri, account) => {
+    const api = `${process.env.REACT_APP_API_URL}/api/v1/nft/create`;
+
+    return fetch(`${api}?cid=${tokenUri.ipnft}&wallet=${account}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((res) => {
+        return res;
+      })
+      .catch((err) => {
+        return err;
+      });
   };
 
   const sendTransaction = (web3, account, contract, tokenUri) => {
@@ -124,13 +139,17 @@ export default function useMinter() {
       });
   };
 
-  const mintBot = (web3, account, contract) => {
+  const mintBot = (web3, account, contract, setList) => {
     setState("MINTING...");
-
+    // que primero acepte la transaccion antes de nada!!
     resizeImage()
-      .then((blob) => {
-        uploadMetadataNFT(blob).then((tokenUri) => {
-          sendTransaction(web3, account, contract, tokenUri);
+      .then((imageFile) => {
+        uploadMetadataNFT(imageFile).then((tokenUri) => {
+          createDbDoc(tokenUri, account).then(() =>
+            sendTransaction(web3, account, contract, tokenUri).then(() =>
+              setList(false)
+            )
+          );
         });
       })
       .catch((error) => console.error(error));
