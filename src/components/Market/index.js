@@ -13,7 +13,8 @@ export default function Market({ account, contract, web3 }) {
     getGlobalNfts,
     randomPosition,
     readLimitNFT,
-  } = useNFTStorage();
+    handleLike,
+  } = useNFTStorage(account);
   const [from, setFrom] = useState(0);
   const [to, setTo] = useState(10);
   const skeletonList = useMemo(
@@ -74,33 +75,32 @@ export default function Market({ account, contract, web3 }) {
     ));
   };
 
-  const handleLike = (nft, index) => {
-    const api = `${process.env.REACT_APP_API_URL}/api/v1/nft/create`;
-    const newNftData = {
-      cid: nft.cid,
-      name: nft.name,
-      description: nft.description,
-      image: nft.image,
-      position: nft.position,
-      createdAt: nft.createdAt,
-      likes: nft.isWallet ? nft.likes - 1 : nft.likes + 1,
-      isWallet: nft.isWallet ? false : true,
+  const handleShare = async (nft) => {
+    const response = await fetch(
+      `https://${nft.image}.ipfs.nftstorage.link/nft-image.avif`
+    );
+    const blob = await response.blob();
+    const filesArray = [
+      new File([blob], "meme.jpg", {
+        type: "image/jpeg",
+        lastModified: new Date().getTime(),
+      }),
+    ];
+    const share = {
+      files: filesArray,
+      title: `${nft.name} - NFT GRID BOT`,
+      text: `${nft.descripion}.\n${nft.likes} likes.\nhttp://localhost:3000/`,
     };
-
-    return fetch(`${api}?cid=${nft.cid}&wallet=${account}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => {
-        nftGlobalList.splice(index, 1, newNftData);
-        setChange(!change);
-        return res;
-      })
-      .catch((err) => {
-        return err;
-      });
+    if (!navigator.canShare) {
+      console.log("share not supported");
+      return false;
+    } else if (navigator.canShare(share)) {
+      navigator.share(share);
+      return true;
+    } else {
+      console.log("invalid share data");
+      return false;
+    }
   };
 
   return (
@@ -110,7 +110,11 @@ export default function Market({ account, contract, web3 }) {
           <div className="masonry-container">
             {nftGlobalList.length > 0 &&
               nftGlobalList.map((nft, index) => (
-                <div className={nft.position} key={index}>
+                <div
+                  className={nft.position}
+                  key={index}
+                  onClick={() => handleShare(nft)}
+                >
                   <div className="picture">
                     <div className="front">
                       <img
@@ -124,7 +128,9 @@ export default function Market({ account, contract, web3 }) {
                       <div className="likes">
                         <div
                           className="heart"
-                          onClick={() => handleLike(nft, index)}
+                          onClick={() =>
+                            handleLike(nft, change, setChange, index)
+                          }
                         >
                           {nft.isWallet ? (
                             <FavoriteIcon />

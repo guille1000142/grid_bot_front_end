@@ -169,6 +169,22 @@ export default function useWeb3() {
     return { usdc, native };
   };
 
+  useEffect(() => {
+    const walletSignature = window.sessionStorage.getItem("signature");
+    if (account && walletSignature === null && web3) {
+      signMessage();
+    }
+  }, [account, web3]);
+
+  const signMessage = () => {
+    const message = "CHAINLINK HACKATHON 2022 | Welcome to grid bot";
+    // const hash = web3.metamask.utils.sha3(message);
+    web3.metamask.eth.personal.sign(message, account).then((signature) => {
+      window.sessionStorage.setItem("signature", signature);
+      window.location.reload();
+    });
+  };
+
   const connectWallet = (change) => {
     if (typeof window.ethereum === "undefined") {
       return false;

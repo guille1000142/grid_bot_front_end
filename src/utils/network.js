@@ -2,7 +2,7 @@ export const quickNodeRPC = {
   polygon:
     "wss://rough-proud-aura.matic-testnet.discover.quiknode.pro/9efc62e03ffb338d860608fcedbe561a2f79038f/",
   mumbai:
-    "wss://rough-proud-aura.matic-testnet.discover.quiknode.pro/9efc62e03ffb338d860608fcedbe561a2f79038f/",
+    "wss://rough-proud-aura.matic-testnet.quiknode.pro/9efc62e03ffb338d860608fcedbe561a2f79038f/",
 };
 
 export const mumbai = {

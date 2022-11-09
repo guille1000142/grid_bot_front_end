@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NFTStorage } from "nft.storage";
-import b64toBlob from "b64-to-blob"; //importing these two in react
+import b64toBlob from "b64-to-blob";
+import { createSigner } from "fast-jwt";
 
 const client = new NFTStorage({
   token: process.env.REACT_APP_NFT_STORAGE_KEY,
@@ -17,6 +18,17 @@ export default function useMinter() {
   });
   const [state, setState] = useState("MINT GRID BOT");
   const [tx, setTx] = useState(false);
+
+  const generateAccessToken = () => {
+    const walletSignature = window.sessionStorage.getItem("signature");
+    if (walletSignature !== undefined) {
+      const sign = createSigner({ key: process.env.REACT_APP_TOKEN_SECRET });
+      const tokenSign = sign({ signature: walletSignature });
+      return tokenSign;
+    } else {
+      return false;
+    }
+  };
 
   const calculateDimensions = () => {
     const { width, height } = image;
@@ -45,16 +57,24 @@ export default function useMinter() {
   };
 
   const resizeImage = () => {
+    const jwt = generateAccessToken();
+    if (!jwt) {
+      return false;
+    }
+
+    const api = `${process.env.REACT_APP_API_URL}/api/v1/converter/image`;
     const dimensions = calculateDimensions();
     const { file } = image;
-    const api = `${process.env.REACT_APP_API_URL}/api/v1/converter/image`;
 
     const formData = new FormData();
     formData.append("image", file, file.name);
     formData.append("dimensions", dimensions);
-
+    console.log(jwt);
     return fetch(api, {
       method: "POST",
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+      },
       body: formData,
     }).then((res) => {
       return res.json().then((data) => {
@@ -76,11 +96,17 @@ export default function useMinter() {
   };
 
   const createDbDoc = (tokenUri, account) => {
+    const jwt = generateAccessToken();
+    if (!jwt) {
+      return false;
+    }
+
     const api = `${process.env.REACT_APP_API_URL}/api/v1/nft/create`;
 
     return fetch(`${api}?cid=${tokenUri.ipnft}&wallet=${account}`, {
       method: "GET",
       headers: {
+        Authorization: `Bearer ${jwt}`,
         "Content-Type": "application/json",
       },
     })

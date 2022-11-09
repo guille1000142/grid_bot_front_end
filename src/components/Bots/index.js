@@ -20,7 +20,7 @@ import { SnackBar } from "../SnackBar";
 const CreateBot = ({ account, contract, web3, switchNetwork, setList }) => {
   const [error, setError] = useState(false);
   const { image, setImage, input, setInput, state, tx, setTx, mintBot } =
-    useMinter();
+    useMinter(account);
 
   useEffect(() => {
     const iconButton = document.querySelector("#icon");
@@ -288,7 +288,7 @@ const CreateBot = ({ account, contract, web3, switchNetwork, setList }) => {
 };
 
 const ListBot = ({ account, contract, web3, bot, setBot }) => {
-  const { nftUserList, getUserNfts } = useNFTStorage();
+  const { nftUserList, getUserNfts } = useNFTStorage(account);
 
   useEffect(() => {
     getUserNfts({ web3, contract, account, setBot });

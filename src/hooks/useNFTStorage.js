@@ -1,9 +1,21 @@
 import { useState } from "react";
+import { createSigner } from "fast-jwt";
 
-export default function useNFTStorage() {
+export default function useNFTStorage(account) {
   const [nftUserList, setNftUserList] = useState(false);
   const [nftGlobalList, setNftGlobalList] = useState([]);
   const [cidsGlobalList, setCidsGlobalList] = useState(false);
+
+  const generateAccessToken = (account) => {
+    const walletSignature = window.sessionStorage.getItem("signature");
+    if (walletSignature !== null) {
+      const sign = createSigner({ key: process.env.REACT_APP_TOKEN_SECRET });
+      const tokenSign = sign({ signature: walletSignature });
+      return tokenSign;
+    } else {
+      return false;
+    }
+  };
 
   const getCidUrl = (uri) => {
     return /^(\w+):\/\/([^\/]+)([^]+)$/.exec(uri);
@@ -21,7 +33,48 @@ export default function useNFTStorage() {
     return className;
   };
 
-  const getUserNfts = ({ contract, account, setBot }) => {
+  const handleLike = (nft, change, setChange, index) => {
+    const jwt = generateAccessToken();
+    if (!jwt) {
+      return false;
+    }
+
+    const api = `${process.env.REACT_APP_API_URL}/api/v1/nft/create`;
+
+    const newNftData = {
+      cid: nft.cid,
+      name: nft.name,
+      description: nft.description,
+      image: nft.image,
+      position: nft.position,
+      createdAt: nft.createdAt,
+      likes: nft.isWallet ? nft.likes - 1 : nft.likes + 1,
+      isWallet: nft.isWallet ? false : true,
+    };
+
+    return fetch(`${api}?cid=${nft.cid}&wallet=${account}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+        "Content-Type": "application/json",
+      },
+    })
+      .then((res) => {
+        nftGlobalList.splice(index, 1, newNftData);
+        setChange(!change);
+        return res;
+      })
+      .catch((err) => {
+        return err;
+      });
+  };
+
+  const getUserNfts = ({ contract, setBot }) => {
+    const jwt = generateAccessToken();
+    if (!jwt) {
+      return false;
+    }
+
     const api = `${process.env.REACT_APP_API_URL}/api/v1/nft/metadata`;
 
     contract.quickNode.gridBotFactory.methods
@@ -43,6 +96,7 @@ export default function useNFTStorage() {
                     return fetch(`${api}/${metadataCid[2]}`, {
                       method: "GET",
                       headers: {
+                        Authorization: `Bearer ${jwt}`,
                         "Content-Type": "application/json",
                       },
                     }).then((res) => {
@@ -69,7 +123,7 @@ export default function useNFTStorage() {
       });
   };
 
-  const getGlobalNfts = (account) => {
+  const getGlobalNfts = () => {
     const date = encodeURI(new Date().toISOString());
     const limit = 1000;
     const gateway = "https://api.nft.storage/";
@@ -87,7 +141,12 @@ export default function useNFTStorage() {
     });
   };
 
-  const readLimitNFT = ({ cids, from, to, actualData, account }) => {
+  const readLimitNFT = ({ cids, from, to, actualData }) => {
+    const jwt = generateAccessToken();
+    if (!jwt) {
+      return false;
+    }
+
     const api = `${process.env.REACT_APP_API_URL}/api/v1/nft/metadata`;
 
     Promise.all(
@@ -96,6 +155,7 @@ export default function useNFTStorage() {
         return fetch(`${api}/${data.cid}`, {
           method: "GET",
           headers: {
+            Authorization: `Bearer ${jwt}`,
             "Content-Type": "application/json",
           },
         }).then((res) => {
@@ -129,5 +189,6 @@ export default function useNFTStorage() {
     getGlobalNfts,
     readLimitNFT,
     randomPosition,
+    handleLike,
   };
 }
