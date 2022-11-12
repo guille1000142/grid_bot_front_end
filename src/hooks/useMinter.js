@@ -16,7 +16,7 @@ export default function useMinter() {
     buyPrice: "",
     sellPrice: "",
   });
-  const [state, setState] = useState("MINT GRID BOT");
+  const [state, setState] = useState("MINT BOT AND NFT");
   const [tx, setTx] = useState(false);
 
   const generateAccessToken = () => {
@@ -146,7 +146,7 @@ export default function useMinter() {
           buyPrice: "",
           sellPrice: "",
         });
-        setState("MINT GRID BOT");
+        setState("MINT BOT AND NFT");
         setTx(receipt);
         setList("list");
       })

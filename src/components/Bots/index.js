@@ -348,7 +348,7 @@ export default function Bots({
   setBot,
   switchNetwork,
 }) {
-  const [list, setList] = useState("list");
+  const [list, setList] = useState("bot");
 
   const handleChange = (event, value) => {
     setList(value);
@@ -365,8 +365,8 @@ export default function Bots({
               value={list}
               aria-label="Tabs where each tab needs to be selected manually"
             >
-              <Tab sx={{ minWidth: "150px" }} label="Bots" value="list" />
-              <Tab sx={{ minWidth: "150px" }} label="Mint Bot" value="mint" />
+              <Tab sx={{ minWidth: "150px" }} label="BOTS" value="bot" />
+              <Tab sx={{ minWidth: "150px" }} label="MINT" value="mint" />
             </Tabs>
           </div>
 

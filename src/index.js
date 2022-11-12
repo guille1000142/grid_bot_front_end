@@ -13,9 +13,9 @@ root.render(
   <ThemeProvider theme={theme}>
     <HashRouter>
       <Routes>
-        <Route path="/trade" element={<Trade />} />
-        <Route path="/marketplace" element={<Marketplace />} />
-        <Route path="*" element={<Navigate replace to="/trade" />} />
+        <Route path="/bot" element={<Trade />} />
+        <Route path="/nft" element={<Marketplace />} />
+        <Route path="*" element={<Navigate replace to="/bot" />} />
       </Routes>
     </HashRouter>
   </ThemeProvider>

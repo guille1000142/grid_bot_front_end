@@ -27,8 +27,8 @@ export default function NavBar({ account, connectWallet }) {
           value={location.pathname}
           aria-label="Tabs where each tab needs to be selected manually"
         >
-          <Tab label="TRADE" value="/trade" />
-          <Tab label="MARKET" value="/marketplace" />
+          <Tab label="BOT" value="/bot" />
+          <Tab label="NFT" value="/nft" />
         </Tabs>
       </div>
 

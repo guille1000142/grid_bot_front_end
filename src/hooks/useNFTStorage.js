@@ -33,38 +33,75 @@ export default function useNFTStorage(account, contract) {
     return className;
   };
 
-  const handleLike = ({ NFT, setChange, change }) => {
-    console.log("like...");
+  const handleLike = ({ NFT }) => {
     const jwt = generateAccessToken();
     if (!jwt) {
       return false;
     }
 
-    const api = `${process.env.REACT_APP_API_URL}/api/v1/nft/create`;
+    const write = `${process.env.REACT_APP_API_URL}/api/v1/nft/create`;
+    const read = `${process.env.REACT_APP_API_URL}/api/v1/nft/metadata`;
 
-    // const newNFTData = {
-    //   likes: NFT.isWallet ? NFT.likes - 1 : NFT.likes + 1,
-    //   isWallet: NFT.isWallet ? false : true,
-    // };
-
-    return fetch(`${api}?cid=${NFT.cid}&wallet=${account}`, {
+    fetch(`${write}?cid=${NFT.cid}&wallet=${account}`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${jwt}`,
         "Content-Type": "application/json",
       },
-    })
-      .then((res) => {
-        setChange(!change);
-        return res;
-      })
-      .catch((err) => {
-        return err;
+    }).then(() => {
+      Promise.all(
+        nftUserList.map((bot) => {
+          const {
+            owner,
+            botAddress,
+            id,
+            buyPrice,
+            sellPrice,
+            pair,
+            balance,
+            cid,
+            name,
+            description,
+            image,
+          } = bot;
+
+          return fetch(`${read}/${cid}`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${jwt}`,
+              "Content-Type": "application/json",
+            },
+          }).then((res) => {
+            return res.json().then((metadata) => {
+              const { value, wallets } = metadata.likes;
+              const isWallet = wallets.find((wallet) => wallet === owner);
+              return {
+                // GRID DATA
+                owner,
+                botAddress,
+                id,
+                buyPrice,
+                sellPrice,
+                pair,
+                balance,
+                // NFT DATA
+                cid,
+                name,
+                description,
+                image,
+                likes: value,
+                isWallet: isWallet !== undefined ? true : false,
+              };
+            });
+          });
+        })
+      ).then((updatedData) => {
+        setNftUserList(updatedData);
       });
+    });
   };
 
   const getUserNfts = ({ contract, setBot, owner, web3 }) => {
-    console.log("fetching...");
     const jwt = generateAccessToken();
     if (!jwt) {
       return false;

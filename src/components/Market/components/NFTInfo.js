@@ -38,7 +38,6 @@ export default function NFTInfo({
   const [NFT, setNFT] = useState(false);
   const [allNFT, setAllNFT] = useState(false);
   const [expanded, setExpanded] = useState("details");
-  const [change, setChange] = useState(false);
 
   const handleChangeDetails = (event, value) => {
     setDetails(value);
@@ -50,7 +49,7 @@ export default function NFTInfo({
 
   useEffect(() => {
     getUserNfts({ owner, contract, setBot: [], web3 });
-  }, [change]);
+  }, []);
 
   useEffect(() => {
     selectedNft();
@@ -159,7 +158,7 @@ export default function NFTInfo({
                       </div>
 
                       <div className="details-data">
-                        <span>
+                        <span className="bold">
                           <Link
                             underline="hover"
                             href={`https://mumbai.polygonscan.com/address/${NFTGridDataAddress}`}
@@ -230,7 +229,7 @@ export default function NFTInfo({
               <div className="tools">
                 <div
                   style={{ cursor: "pointer" }}
-                  onClick={() => handleLike({ NFT, change, setChange })}
+                  onClick={() => handleLike({ NFT })}
                 >
                   {NFT.isWallet ? <FavoriteIcon /> : <FavoriteBorderIcon />}
                 </div>
@@ -247,19 +246,23 @@ export default function NFTInfo({
             <div className="owner">
               <span>
                 Owner: &nbsp;
-                <Link
-                  underline="hover"
-                  href={`https://mumbai.polygonscan.com/address/${NFT.owner}`}
-                  target="_blank"
-                  rel="noopener"
-                >
-                  {NFT.owner.substring(0, 5) +
-                    "..." +
-                    NFT.owner.substring(37, 42)}
-                </Link>
+                <span className="bold">
+                  <Link
+                    underline="hover"
+                    href={`https://mumbai.polygonscan.com/address/${NFT.owner}`}
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    {NFT.owner.substring(0, 5) +
+                      "..." +
+                      NFT.owner.substring(37, 42)}
+                  </Link>
+                </span>
               </span>
               &nbsp;
-              <span>Bots: {nftUserList.length}</span>
+              <span>
+                Bots: <span className="bold">{nftUserList.length}</span>
+              </span>
               <div className="nft-preview">
                 {nftUserList.map((data, index) => {
                   return (
