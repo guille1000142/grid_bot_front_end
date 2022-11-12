@@ -42,12 +42,16 @@ export default function useNFTStorage(account, contract) {
     const write = `${process.env.REACT_APP_API_URL}/api/v1/nft/create`;
     const read = `${process.env.REACT_APP_API_URL}/api/v1/nft/metadata`;
 
-    fetch(`${write}?cid=${NFT.cid}&wallet=${account}`, {
-      method: "GET",
+    fetch(`${write}`, {
+      method: "PUT",
       headers: {
         Authorization: `Bearer ${jwt}`,
         "Content-Type": "application/json",
       },
+      body: JSON.stringify({
+        cid: NFT.cid,
+        wallet: [account],
+      }),
     }).then(() => {
       Promise.all(
         nftUserList.map((bot) => {
