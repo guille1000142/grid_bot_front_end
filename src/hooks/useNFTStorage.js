@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { createSigner } from "fast-jwt";
 
-export default function useNFTStorage(account) {
+export default function useNFTStorage(account, contract) {
   const [nftUserList, setNftUserList] = useState(false);
   const [nftGlobalList, setNftGlobalList] = useState([]);
-  const [cidsGlobalList, setCidsGlobalList] = useState(false);
+  const [indexGlobalList, setIndexGlobalList] = useState(false);
 
   const generateAccessToken = (account) => {
-    const walletSignature = window.sessionStorage.getItem("signature");
+    const walletSignature = window.localStorage.getItem("signature");
     if (walletSignature !== null) {
       const sign = createSigner({ key: process.env.REACT_APP_TOKEN_SECRET });
       const tokenSign = sign({ signature: walletSignature });
@@ -33,7 +33,7 @@ export default function useNFTStorage(account) {
     return className;
   };
 
-  const handleLike = (nft, change, setChange, index) => {
+  const handleLike = ({ NFT, setNFT }) => {
     const jwt = generateAccessToken();
     if (!jwt) {
       return false;
@@ -41,18 +41,12 @@ export default function useNFTStorage(account) {
 
     const api = `${process.env.REACT_APP_API_URL}/api/v1/nft/create`;
 
-    const newNftData = {
-      cid: nft.cid,
-      name: nft.name,
-      description: nft.description,
-      image: nft.image,
-      position: nft.position,
-      createdAt: nft.createdAt,
-      likes: nft.isWallet ? nft.likes - 1 : nft.likes + 1,
-      isWallet: nft.isWallet ? false : true,
+    const newNFTData = {
+      likes: NFT.isWallet ? NFT.likes - 1 : NFT.likes + 1,
+      isWallet: NFT.isWallet ? false : true,
     };
 
-    return fetch(`${api}?cid=${nft.cid}&wallet=${account}`, {
+    return fetch(`${api}?cid=${NFT.cid}&wallet=${account}`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${jwt}`,
@@ -60,8 +54,7 @@ export default function useNFTStorage(account) {
       },
     })
       .then((res) => {
-        nftGlobalList.splice(index, 1, newNftData);
-        setChange(!change);
+        setNFT({ ...NFT, ...newNFTData });
         return res;
       })
       .catch((err) => {
@@ -69,7 +62,7 @@ export default function useNFTStorage(account) {
       });
   };
 
-  const getUserNfts = ({ contract, setBot }) => {
+  const getUserNfts = ({ contract, setBot, owner, web3 }) => {
     const jwt = generateAccessToken();
     if (!jwt) {
       return false;
@@ -78,18 +71,19 @@ export default function useNFTStorage(account) {
     const api = `${process.env.REACT_APP_API_URL}/api/v1/nft/metadata`;
 
     contract.quickNode.gridBotFactory.methods
-      .getTotalNumberOfGrid(account)
+      .getTotalNumberOfGrid(owner)
       .call()
       .then((amount) => {
+        if (amount === "0") return false;
         const bots = Array.apply(null, Array(parseInt(amount)));
         Promise.all(
-          bots.map((data, index) => {
+          bots.map((noData, index) => {
             return contract.quickNode.gridBotFactory.methods
-              .listOfGridsPerUser(account, index)
+              .getGridDataPerUser(owner, index)
               .call()
-              .then((data) => {
+              .then((gridData) => {
                 return contract.quickNode.nftGridData.methods
-                  .tokenURI(data.nftID)
+                  .tokenURI(gridData.nftID)
                   .call()
                   .then((uri) => {
                     const metadataCid = getCidUrl(uri);
@@ -101,90 +95,154 @@ export default function useNFTStorage(account) {
                       },
                     }).then((res) => {
                       return res.json().then((metadata) => {
-                        const imageCid = getCidUrl(metadata.image);
-                        return {
-                          botAddress: data.gridBotAddress,
-                          buyPrice: data.buyPrice_,
-                          sellPrice: data.sellPrice_,
-                          cid: metadataCid[2],
-                          name: metadata.name,
-                          description: metadata.description,
-                          image: imageCid[2],
-                        };
+                        return contract.quickNode.usdcMock.methods
+                          .balanceOf(gridData[0])
+                          .call()
+                          .then((balance) => {
+                            const imageCid = getCidUrl(metadata.image);
+                            const { value, wallets } = metadata.likes;
+                            const isWallet = wallets.find(
+                              (wallet) => wallet === owner
+                            );
+                            return {
+                              // GRID DATA
+                              owner: owner,
+                              botAddress: gridData[0],
+                              id: gridData.nftID,
+                              buyPrice: parseInt(gridData.buyPrice) / 100000000,
+                              sellPrice:
+                                parseInt(gridData.sellPrice) / 100000000,
+                              pair: gridData[4],
+                              balance: parseFloat(
+                                web3.quickNode.utils.fromWei(balance, "ether")
+                              ),
+                              // NFT DATA
+                              cid: metadataCid[2],
+                              name: metadata.name,
+                              description: metadata.description,
+                              image: imageCid[2],
+                              likes: value,
+                              isWallet: isWallet !== undefined ? true : false,
+                            };
+                          });
                       });
                     });
                   });
               });
           })
         ).then((data) => {
-          setBot(data[0]);
+          if (setBot.length !== 0) {
+            setBot(data[0]);
+          }
           setNftUserList(data);
         });
       });
   };
 
-  const getGlobalNfts = () => {
-    const date = encodeURI(new Date().toISOString());
-    const limit = 1000;
-    const gateway = "https://api.nft.storage/";
+  // const getGlobalNfts = () => {
+  //   const date = encodeURI(new Date().toISOString());
+  //   const limit = 1000;
+  //   const gateway = "https://api.nft.storage/";
 
-    fetch(`${gateway}?before=${date}&limit=${limit}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.REACT_APP_NFT_STORAGE_KEY}`,
-      },
-    }).then((res) => {
-      res.json().then((cids) => {
-        setCidsGlobalList(cids.value);
+  //   fetch(`${gateway}?before=${date}&limit=${limit}`, {
+  //     method: "GET",
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //       Authorization: `Bearer ${process.env.REACT_APP_NFT_STORAGE_KEY}`,
+  //     },
+  //   }).then((res) => {
+  //     res.json().then((cids) => {
+  //       setCidsGlobalList(cids.value);
+  //     });
+  //   });
+  // };
+
+  const getGlobalNfts = () => {
+    if (!account || !contract) return false;
+
+    contract.quickNode.gridBotFactory.methods
+      .totalGrids()
+      .call()
+      .then((amount) => {
+        const gridsIds = Array.apply(null, Array(parseInt(amount)));
+        setIndexGlobalList(gridsIds);
       });
-    });
   };
 
-  const readLimitNFT = ({ cids, from, to, actualData }) => {
+  const readLimitNFT = ({ from, to, actualData }) => {
     const jwt = generateAccessToken();
-    if (!jwt) {
-      return false;
-    }
+
+    if (!jwt || !account || !contract) return false;
 
     const api = `${process.env.REACT_APP_API_URL}/api/v1/nft/metadata`;
 
     Promise.all(
-      cids.slice(from, to).map((data) => {
-        const position = randomPosition(3);
-        return fetch(`${api}/${data.cid}`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${jwt}`,
-            "Content-Type": "application/json",
-          },
-        }).then((res) => {
-          return res.json().then((metadata) => {
-            const imageCid = getCidUrl(metadata.image);
-            const { value, wallets } = metadata.likes;
-            const isWallet = wallets.find(
-              (wallet) => wallet.toLowerCase() === account
-            );
-            return {
-              cid: metadata._id,
-              name: metadata.name,
-              description: metadata.description,
-              image: imageCid[2],
-              position,
-              createdAt: new Date(data.created).toISOString(),
-              likes: value,
-              isWallet: isWallet !== undefined ? true : false,
-            };
+      indexGlobalList.slice(from, to).map((noData, index) => {
+        return contract.quickNode.gridBotFactory.methods
+          .listOfAllGrid(index)
+          .call()
+          .then((gridAddress) => {
+            return contract.quickNode.gridBotFactory.methods
+              .getDataPerGrid(gridAddress)
+              .call()
+              .then((gridInfo) => {
+                return contract.quickNode.gridBotFactory.methods
+                  .getGridDataPerUser(gridInfo[0], gridInfo[1])
+                  .call()
+                  .then((gridData) => {
+                    return contract.quickNode.nftGridData.methods
+                      .tokenURI(gridData.nftID)
+                      .call()
+                      .then((uri) => {
+                        if (uri === "patito") return false;
+                        const metadataCid = getCidUrl(uri);
+                        return fetch(`${api}/${metadataCid[2]}`, {
+                          method: "GET",
+                          headers: {
+                            Authorization: `Bearer ${jwt}`,
+                            "Content-Type": "application/json",
+                          },
+                        }).then((res) => {
+                          return res.json().then((metadata) => {
+                            const position = randomPosition(3);
+                            const imageCid = getCidUrl(metadata.image);
+                            const { value, wallets } = metadata.likes;
+                            const isWallet = wallets.find(
+                              (wallet) => wallet === account
+                            );
+                            return {
+                              position,
+                              // GRID DATA
+                              owner: gridInfo[0].toLowerCase(),
+                              botAddress: gridData[0],
+                              id: gridData.nftID,
+                              buyPrice: gridData.buyPrice,
+                              sellPrice: gridData.sellPrice,
+                              pair: gridData[4],
+                              //NFT DATA
+                              cid: metadataCid[2],
+                              name: metadata.name,
+                              description: metadata.description,
+                              image: imageCid[2],
+                              likes: value,
+                              isWallet: isWallet !== undefined ? true : false,
+                            };
+                          });
+                        });
+                      });
+                  });
+              });
           });
-        });
       })
-    ).then((nfts) => setNftGlobalList([...actualData, ...nfts]));
+    ).then((nfts) => {
+      setNftGlobalList([...actualData, ...nfts]);
+    });
   };
 
   return {
     nftUserList,
     nftGlobalList,
-    cidsGlobalList,
+    indexGlobalList,
     getUserNfts,
     getGlobalNfts,
     readLimitNFT,

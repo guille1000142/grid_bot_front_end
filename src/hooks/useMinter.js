@@ -20,7 +20,7 @@ export default function useMinter() {
   const [tx, setTx] = useState(false);
 
   const generateAccessToken = () => {
-    const walletSignature = window.sessionStorage.getItem("signature");
+    const walletSignature = window.localStorage.getItem("signature");
     if (walletSignature !== undefined) {
       const sign = createSigner({ key: process.env.REACT_APP_TOKEN_SECRET });
       const tokenSign = sign({ signature: walletSignature });
@@ -118,19 +118,19 @@ export default function useMinter() {
       });
   };
 
-  const sendTransaction = (web3, account, contract, tokenUri) => {
+  const sendTransaction = (web3, account, contract, tokenUri, setList) => {
     contract.metamask.gridBotFactory.methods
       .factoryNewGrid(
         input.name,
         tokenUri.url,
         input.pair,
-        input.buyPrice,
-        input.sellPrice,
+        parseFloat(input.buyPrice) * 100000000,
+        parseFloat(input.sellPrice) * 100000000,
         account
       )
       .send({
         from: account,
-        value: web3.quickNode.utils.toWei("0.001", "ether"),
+        value: web3.quickNode.utils.toWei("0.01", "ether"),
         // gasPrice: web3.utils.toWei(gas.fastest.toString(), "gwei"),
         // gasLimit: 500000,
       })
@@ -148,8 +148,10 @@ export default function useMinter() {
         });
         setState("MINT GRID BOT");
         setTx(receipt);
+        setList("list");
       })
       .on("error", (err, receipt) => {
+        setList("list");
         if (err.code === -32603) {
           console.error("This transaction needs more gas to be executed");
           return false;
@@ -167,14 +169,11 @@ export default function useMinter() {
 
   const mintBot = (web3, account, contract, setList) => {
     setState("MINTING...");
-    // que primero acepte la transaccion antes de nada!!
     resizeImage()
       .then((imageFile) => {
         uploadMetadataNFT(imageFile).then((tokenUri) => {
           createDbDoc(tokenUri, account).then(() =>
-            sendTransaction(web3, account, contract, tokenUri).then(() =>
-              setList(false)
-            )
+            sendTransaction(web3, account, contract, tokenUri, setList)
           );
         });
       })

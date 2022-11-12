@@ -9,7 +9,7 @@ export const Loader = () => {
         variant="determinate"
         sx={{
           color: (theme) =>
-            theme.palette.grey[theme.palette.mode === "light" ? 200 : 800],
+            theme.palette.grey[theme.palette.mode === "light" ? 800 : 800],
         }}
         size={40}
         thickness={4}

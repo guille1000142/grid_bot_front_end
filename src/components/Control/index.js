@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Warning } from "../Warning";
 import { Button, Card, TextField, Slider, Link } from "@mui/material";
 import { SnackBar } from "../SnackBar";
+import { Loader } from "../Loader";
 
 export default function Control({
   account,
@@ -28,6 +29,7 @@ export default function Control({
   }, [bot, web3, state]);
 
   const getBotData = async () => {
+    setData(false);
     const spotContract = readBotContract(bot.botAddress);
     setBotContract(spotContract);
 
@@ -67,7 +69,7 @@ export default function Control({
     }
 
     setDeposit({ deposit: false, approve: true });
-    contract.usdcMock.methods
+    contract.metamask.usdcMock.methods
       .approve(
         bot.botAddress,
         web3.quickNode.utils.toWei(
@@ -82,7 +84,7 @@ export default function Control({
       })
       .on("receipt", (receipt) => {
         setDeposit({ deposit: false, approve: false });
-        setTx({ withdraw: receipt });
+        setTx({ approve: receipt });
         setState(!state);
       })
       .on("error", (err, receipt) => {
@@ -136,6 +138,7 @@ export default function Control({
       .on("receipt", (receipt) => {
         setDeposit({ deposit: false, approve: false });
         setTx({ deposit: receipt });
+        setAddBalance(0);
         setState(!state);
       })
       .on("error", (err, receipt) => {
@@ -218,7 +221,7 @@ export default function Control({
     <>
       {account && contract && web3 ? (
         <>
-          {bot && data ? (
+          {data && (
             <Card
               sx={{
                 padding: "15px",
@@ -235,6 +238,7 @@ export default function Control({
                 src={`https://${bot.image}.ipfs.nftstorage.link/nft-image.avif`}
                 alt="nft"
               />
+              &nbsp;
               <h4>Grid Bot</h4>
               <div className="balance">
                 <span>State: </span>
@@ -248,7 +252,7 @@ export default function Control({
                 <span>Gas:</span>
                 <span className="bold">{data.bot.pair} LINK</span>
               </div>
-              <div className="divider"></div>
+              <div className="divider-control"></div>
               <div className="balance">
                 <span>Available balance:</span>
                 <span className="bold">{data.bot.usdc} USDC</span>
@@ -333,11 +337,9 @@ export default function Control({
                   setOpen={setTx}
                   label={
                     <>
-                      {tx.withdraw ? (
-                        <span>Successfully withdrawn!</span>
-                      ) : (
-                        <span>Successfully deposited!</span>
-                      )}
+                      {tx.approve && <span>Successfully approved!</span>}
+                      {tx.deposit && <span>Successfully deposited!</span>}
+                      {tx.withdraw && <span>Successfully withdrawn!</span>}
                       &nbsp;
                       <Link
                         underline="hover"
@@ -358,13 +360,14 @@ export default function Control({
                 />
               )}
             </Card>
-          ) : (
-            <Warning label={"SELECT BOT"} />
           )}
         </>
       ) : (
         <Warning label={"CONNECT WALLET"} />
       )}
+
+      {bot && !data && <Loader />}
+      {!bot && <Warning label={"MINT BOT"} />}
     </>
   );
 }

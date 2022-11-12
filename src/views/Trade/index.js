@@ -33,7 +33,7 @@ export default function Trade() {
           switchNetwork={switchNetwork}
         />
       </nav>
-      <section className="chat">
+      <section className="chart">
         <Chart bot={bot} />
       </section>
       <article className="transactions">

@@ -1,5 +1,4 @@
 import * as React from "react";
-import Paper from "@mui/material/Paper";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -110,7 +109,7 @@ export default function Transactions({ account, contract, web3, bot }) {
               </Table>
             </TableContainer>
           ) : (
-            <Warning label={"SELECT BOT"} />
+            <Warning label={"MINT BOT"} />
           )}
         </>
       ) : (

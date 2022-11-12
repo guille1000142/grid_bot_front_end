@@ -76,3 +76,15 @@ body::-webkit-scrollbar-thumb {
 .red {
   color: #ce0000;
 }
+
+.bot-selector {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.bot-selector-trade {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

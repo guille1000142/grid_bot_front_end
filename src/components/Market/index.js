@@ -1,36 +1,47 @@
 import { useEffect, useState, useRef, useMemo } from "react";
-import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import FavoriteIcon from "@mui/icons-material/Favorite";
-import { Skeleton } from "@mui/material";
+import {
+  Skeleton,
+  TextField,
+  Chip,
+  FormControl,
+  FormLabel,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+} from "@mui/material";
 import { Warning } from "../Warning";
 import useNFTStorage from "../../hooks/useNFTStorage";
 import useNearScreen from "../../hooks/useNearScreen";
+import { btcMockAddress, ethMockAddress } from "../../utils/address";
+import NFTInfo from "./components/NFTInfo";
 
 export default function Market({ account, contract, web3 }) {
   const {
     nftGlobalList,
-    cidsGlobalList,
+    indexGlobalList,
+    nftUserList,
     getGlobalNfts,
     randomPosition,
     readLimitNFT,
     handleLike,
-  } = useNFTStorage(account);
+    getUserNfts,
+  } = useNFTStorage(account, contract);
   const [from, setFrom] = useState(0);
   const [to, setTo] = useState(10);
+  const [selectedNFT, setSelectedNFT] = useState(false);
+  const [address, setAddress] = useState("");
+  const [radio, setRadio] = useState("");
+  const [NFTFilter, setNFTFilter] = useState(false);
   const skeletonList = useMemo(
     () => [...Array(10)].map((x) => randomPosition(3)),
     []
   );
-  const [change, setChange] = useState(false);
   const screenRef = useRef();
   const { isNearScreen } = useNearScreen({
+    distance: "400px",
     externalRef: nftGlobalList.length > 0 ? screenRef : null,
     once: false,
   });
-
-  useEffect(() => {
-    getGlobalNfts();
-  }, []);
 
   useEffect(() => {
     if (isNearScreen && nftGlobalList.length === to) {
@@ -40,20 +51,29 @@ export default function Market({ account, contract, web3 }) {
   }, [isNearScreen, nftGlobalList, to]);
 
   useEffect(() => {
+    getGlobalNfts();
+  }, [account, contract]);
+
+  useEffect(() => {
+    getGridNftDatainScroll();
+  }, [nftGlobalList, from, to, indexGlobalList, account, contract]);
+
+  const getGridNftDatainScroll = () => {
+    if (!account || !contract) return false;
+
     if (
       nftGlobalList.length < to &&
-      cidsGlobalList.length > 0 &&
-      nftGlobalList.length < cidsGlobalList.length
+      indexGlobalList.length > 0 &&
+      nftGlobalList.length < indexGlobalList.length
     ) {
       readLimitNFT({
-        cids: cidsGlobalList,
         from,
-        to: cidsGlobalList.length > to ? to : cidsGlobalList.length,
+        to: indexGlobalList.length > to ? to : indexGlobalList.length,
         actualData: nftGlobalList,
         account,
       });
     }
-  }, [nftGlobalList, from, to, cidsGlobalList]);
+  };
 
   const SkeletonImage = ({ limit }) => {
     return skeletonList.slice(0, limit).map((position, index) => (
@@ -75,9 +95,9 @@ export default function Market({ account, contract, web3 }) {
     ));
   };
 
-  const handleShare = async (nft) => {
+  const handleShare = async ({ NFT }) => {
     const response = await fetch(
-      `https://${nft.image}.ipfs.nftstorage.link/nft-image.avif`
+      `https://${NFT.image}.ipfs.nftstorage.link/nft-image.avif`
     );
     const blob = await response.blob();
     const filesArray = [
@@ -88,71 +108,184 @@ export default function Market({ account, contract, web3 }) {
     ];
     const share = {
       files: filesArray,
-      title: `${nft.name} - NFT GRID BOT`,
-      text: `${nft.descripion}.\n${nft.likes} likes.\nhttp://localhost:3000/`,
+      title: `${NFT.name} - NFT GRID BOT`,
+      text: `${NFT.descripion}.\n${NFT.likes} likes.\nhttps://wispy-snowflake-7196.on.fleek.co/`,
     };
     if (!navigator.canShare) {
-      console.log("share not supported");
+      console.error("share not supported");
       return false;
     } else if (navigator.canShare(share)) {
       navigator.share(share);
       return true;
     } else {
-      console.log("invalid share data");
+      console.error("invalid share data");
       return false;
     }
+  };
+
+  useEffect(() => {
+    getFilters();
+  }, [nftGlobalList]);
+
+  const getFilters = () => {
+    setNFTFilter(nftGlobalList);
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setAddress(e.target.value.toLowerCase());
+  };
+
+  useEffect(() => {
+    handleFilters();
+  }, [address]);
+
+  const handleFilters = () => {
+    if (address.length !== 42) {
+      setNFTFilter(nftGlobalList);
+      return false;
+    }
+
+    const filter = nftGlobalList.filter((nft) => nft.owner === address);
+    setNFTFilter(filter);
+  };
+
+  const handleDelete = () => {
+    setAddress("");
+    setRadio("");
+    setNFTFilter(nftGlobalList);
+  };
+
+  const handleRadio = (e) => {
+    e.preventDefault();
+    if (e.target.value === "own") setAddress(account);
+    if (e.target.value === "custom") setAddress("");
+
+    setRadio(e.target.value);
   };
 
   return (
     <>
       {account && contract && web3 ? (
         <>
-          <div className="masonry-container">
-            {nftGlobalList.length > 0 &&
-              nftGlobalList.map((nft, index) => (
-                <div
-                  className={nft.position}
-                  key={index}
-                  onClick={() => handleShare(nft)}
-                >
-                  <div className="picture">
-                    <div className="front">
-                      <img
-                        src={`https://${nft.image}.ipfs.nftstorage.link/nft-image.avif`}
-                        alt=""
+          {!selectedNFT ? (
+            <>
+              <div className="market-container">
+                <div className="filter-panel">
+                  <FormControl>
+                    <FormLabel id="demo-row-radio-buttons-group-label">
+                      Filter by owner address
+                    </FormLabel>
+                    <RadioGroup
+                      value={radio}
+                      row
+                      aria-labelledby="demo-row-radio-buttons-group-label"
+                      name="row-radio-buttons-group"
+                    >
+                      <FormControlLabel
+                        onChange={handleRadio}
+                        value="own"
+                        control={<Radio />}
+                        label="Own"
                       />
-                    </div>
-                    <div className="back">
-                      <h4>{nft.name}</h4>
-                      <span>{nft.description}</span>
-                      <div className="likes">
-                        <div
-                          className="heart"
-                          onClick={() =>
-                            handleLike(nft, change, setChange, index)
-                          }
-                        >
-                          {nft.isWallet ? (
-                            <FavoriteIcon />
-                          ) : (
-                            <FavoriteBorderIcon />
-                          )}
-                        </div>
-                        <div>{nft.likes}</div>
-                      </div>
-                    </div>
-                  </div>
+                      <FormControlLabel
+                        onChange={handleRadio}
+                        value="custom"
+                        control={<Radio />}
+                        label="Custom"
+                      />
+                    </RadioGroup>
+                  </FormControl>
+                  {radio === "custom" && (
+                    <TextField
+                      onChange={handleSearch}
+                      name="owner"
+                      id="input-owner"
+                      label="Owner address"
+                      type="text"
+                      size="small"
+                      value={address}
+                    />
+                  )}
+
+                  {address.length === 42 && (
+                    <Chip
+                      label={
+                        address.substring(0, 5) +
+                        "..." +
+                        address.substring(37, 42)
+                      }
+                      onDelete={handleDelete}
+                    />
+                  )}
+                </div>
+
+                <div className="masonry-container">
+                  {NFTFilter.length > 0 &&
+                    NFTFilter.map(
+                      (nft, index) =>
+                        nft && (
+                          <div
+                            style={{ borderRadius: "20px" }}
+                            className={nft.position}
+                            key={index}
+                          >
+                            <div
+                              style={{ borderRadius: "20px" }}
+                              className="picture"
+                            >
+                              <div
+                                style={{ borderRadius: "20px" }}
+                                className="front"
+                              >
+                                <img
+                                  style={{ borderRadius: "20px" }}
+                                  src={`https://${nft.image}.ipfs.nftstorage.link/nft-image.avif`}
+                                  alt=""
+                                />
+                              </div>
+                              <div
+                                style={{
+                                  borderRadius: "20px",
+                                  cursor: "pointer",
+                                }}
+                                className="back"
+                                onClick={() =>
+                                  setSelectedNFT({
+                                    owner: nft.owner,
+                                    id: nft.id,
+                                  })
+                                }
+                              >
+                                <Warning label={"VIEW NFT"} />
+                              </div>
+                            </div>
+                          </div>
+                        )
+                    )}
+                  {skeletonList && nftGlobalList.length === 0 && (
+                    <SkeletonImage limit={6} />
+                  )}
+                  {skeletonList &&
+                    nftGlobalList.length !== indexGlobalList.length &&
+                    nftGlobalList.length < to &&
+                    nftGlobalList.length !== 0 && <SkeletonImage limit={6} />}
                   <div id="final-page" ref={screenRef}></div>
                 </div>
-              ))}
-            {skeletonList && nftGlobalList.length === 0 && (
-              <SkeletonImage limit={6} />
-            )}
-            {skeletonList &&
-              nftGlobalList.length !== cidsGlobalList.length &&
-              nftGlobalList.length < to &&
-              nftGlobalList.length !== 0 && <SkeletonImage limit={6} />}
-          </div>
+              </div>
+            </>
+          ) : (
+            <NFTInfo
+              {...selectedNFT}
+              setSelectedNFT={setSelectedNFT}
+              handleShare={handleShare}
+              handleLike={handleLike}
+              contract={contract}
+              web3={web3}
+              nftUserList={nftUserList}
+              getUserNfts={getUserNfts}
+            />
+          )}
         </>
       ) : (
         <Warning label={"CONNECT WALLET"} />

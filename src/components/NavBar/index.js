@@ -35,15 +35,6 @@ export default function NavBar({ account, connectWallet }) {
       <div>
         {account ? (
           <Chip
-            // sx={{
-            //   color: "#ffffff",
-
-            //   padding: "16px 5px",
-            //   fontSize: "14px",
-            //   "& .MuiChip-root": {
-            //     backgroundColor: "#000000",
-            //   },
-            // }}
             deleteIcon={<FiberManualRecordRounded />}
             label={
               <div id="account">

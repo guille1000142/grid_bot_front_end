@@ -39,5 +39,24 @@ export const theme = createTheme({
         }),
       },
     },
+    MuiAccordion: {
+      styleOverrides: {
+        root: sx({
+          background: "transparent",
+          bgcolor: "#0c0c0c",
+          borderRadius: "20px",
+          "&::before": {
+            background: "transparent",
+          },
+        }),
+      },
+    },
+    MuiSkeleton: {
+      styleOverrides: {
+        root: sx({
+          borderRadius: "20px",
+        }),
+      },
+    },
   },
 });

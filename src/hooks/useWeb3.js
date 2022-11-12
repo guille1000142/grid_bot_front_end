@@ -24,87 +24,23 @@ export default function useWeb3() {
   const { changeNetwork } = useNetwork();
 
   useEffect(() => {
-    const quickNode = new Web3(
-      new Web3.providers.WebsocketProvider(quickNodeRPC.mumbai)
-    );
+    window.ethereum
+      .request({ method: "eth_accounts" })
+      .then((account) => setAccount(account[0]))
+      .catch((err) => console.error(err));
 
-    if (typeof window.ethereum !== "undefined") {
-      const metamask = new Web3(window.ethereum);
-      setWeb3({ quickNode, metamask });
+    window.ethereum
+      .request({ method: "eth_chainId" })
+      .then((chainId) => setNetwork(chainId))
+      .catch((err) => console.error(err));
 
-      const gridBotFactoryM = new metamask.eth.Contract(
-        JSON.parse(GridBotFactoryAbi.result),
-        GridBotFactoryAddress
-      );
+    window.ethereum.on("accountsChanged", (accounts) => {
+      setAccount(accounts[0]);
+    });
 
-      const nftGridDataM = new metamask.eth.Contract(
-        JSON.parse(NFTGridDataAbi.result),
-        NFTGridDataAddress
-      );
-
-      const upKeepIDRegisterFactoryM = new metamask.eth.Contract(
-        JSON.parse(UpKeepIDRegisterFactoryAbi.result),
-        UpKeepIDRegisterFactoryAddress
-      );
-
-      const usdcMockM = new metamask.eth.Contract(
-        ERC20StandardAbi,
-        usdcMockAddress
-      );
-
-      const gridBotFactoryQ = new quickNode.eth.Contract(
-        JSON.parse(GridBotFactoryAbi.result),
-        GridBotFactoryAddress
-      );
-
-      const nftGridDataQ = new quickNode.eth.Contract(
-        JSON.parse(NFTGridDataAbi.result),
-        NFTGridDataAddress
-      );
-
-      const upKeepIDRegisterFactoryQ = new quickNode.eth.Contract(
-        JSON.parse(UpKeepIDRegisterFactoryAbi.result),
-        UpKeepIDRegisterFactoryAddress
-      );
-
-      const usdcMockQ = new quickNode.eth.Contract(
-        ERC20StandardAbi,
-        usdcMockAddress
-      );
-
-      setContract({
-        metamask: {
-          gridBotFactory: gridBotFactoryM,
-          nftGridData: nftGridDataM,
-          upKeepIDRegisterFactory: upKeepIDRegisterFactoryM,
-          usdcMock: usdcMockM,
-        },
-        quickNode: {
-          gridBotFactory: gridBotFactoryQ,
-          nftGridData: nftGridDataQ,
-          upKeepIDRegisterFactory: upKeepIDRegisterFactoryQ,
-          usdcMock: usdcMockQ,
-        },
-      });
-
-      window.ethereum
-        .request({ method: "eth_accounts" })
-        .then((account) => setAccount(account[0]))
-        .catch((err) => console.error(err));
-
-      window.ethereum
-        .request({ method: "eth_chainId" })
-        .then((chainId) => setNetwork(chainId))
-        .catch((err) => console.error(err));
-
-      window.ethereum.on("accountsChanged", (accounts) => {
-        setAccount(accounts[0]);
-      });
-
-      window.ethereum.on("chainChanged", (_chainId) => {
-        setNetwork(_chainId);
-      });
-    }
+    window.ethereum.on("chainChanged", (_chainId) => {
+      setNetwork(_chainId);
+    });
 
     return () => {
       if (typeof window.ethereum !== "undefined") {
@@ -120,9 +56,7 @@ export default function useWeb3() {
   }, []);
 
   useEffect(() => {
-    if (account && network) {
-      switchNetwork();
-    }
+    connectProvider();
   }, [account, network]);
 
   const switchNetwork = () => {
@@ -132,6 +66,79 @@ export default function useWeb3() {
     } else {
       return true;
     }
+  };
+
+  const connectProvider = () => {
+    if (typeof window.ethereum === "undefined") {
+      window.alert("Metamask not installed");
+      return false;
+    }
+
+    if (!account && !network) return false;
+
+    switchNetwork();
+
+    const quickNode = new Web3(
+      new Web3.providers.WebsocketProvider(quickNodeRPC.mumbai)
+    );
+
+    const metamask = new Web3(window.ethereum);
+    setWeb3({ quickNode, metamask });
+
+    const gridBotFactoryM = new metamask.eth.Contract(
+      JSON.parse(GridBotFactoryAbi.result),
+      GridBotFactoryAddress
+    );
+
+    const nftGridDataM = new metamask.eth.Contract(
+      JSON.parse(NFTGridDataAbi.result),
+      NFTGridDataAddress
+    );
+
+    const upKeepIDRegisterFactoryM = new metamask.eth.Contract(
+      JSON.parse(UpKeepIDRegisterFactoryAbi.result),
+      UpKeepIDRegisterFactoryAddress
+    );
+
+    const usdcMockM = new metamask.eth.Contract(
+      ERC20StandardAbi,
+      usdcMockAddress
+    );
+
+    const gridBotFactoryQ = new quickNode.eth.Contract(
+      JSON.parse(GridBotFactoryAbi.result),
+      GridBotFactoryAddress
+    );
+
+    const nftGridDataQ = new quickNode.eth.Contract(
+      JSON.parse(NFTGridDataAbi.result),
+      NFTGridDataAddress
+    );
+
+    const upKeepIDRegisterFactoryQ = new quickNode.eth.Contract(
+      JSON.parse(UpKeepIDRegisterFactoryAbi.result),
+      UpKeepIDRegisterFactoryAddress
+    );
+
+    const usdcMockQ = new quickNode.eth.Contract(
+      ERC20StandardAbi,
+      usdcMockAddress
+    );
+
+    setContract({
+      metamask: {
+        gridBotFactory: gridBotFactoryM,
+        nftGridData: nftGridDataM,
+        upKeepIDRegisterFactory: upKeepIDRegisterFactoryM,
+        usdcMock: usdcMockM,
+      },
+      quickNode: {
+        gridBotFactory: gridBotFactoryQ,
+        nftGridData: nftGridDataQ,
+        upKeepIDRegisterFactory: upKeepIDRegisterFactoryQ,
+        usdcMock: usdcMockQ,
+      },
+    });
   };
 
   const truncateDecimals = function (number, digits) {
@@ -144,11 +151,11 @@ export default function useWeb3() {
 
   const readBotContract = (address) => {
     const spotBotGridM = new web3.metamask.eth.Contract(
-      SpotBotGridAbi,
+      SpotBotGridAbi.abi,
       address
     );
     const spotBotGridQ = new web3.quickNode.eth.Contract(
-      SpotBotGridAbi,
+      SpotBotGridAbi.abi,
       address
     );
     return {
@@ -170,7 +177,7 @@ export default function useWeb3() {
   };
 
   useEffect(() => {
-    const walletSignature = window.sessionStorage.getItem("signature");
+    const walletSignature = window.localStorage.getItem("signature");
     if (account && walletSignature === null && web3) {
       signMessage();
     }
@@ -180,7 +187,7 @@ export default function useWeb3() {
     const message = "CHAINLINK HACKATHON 2022 | Welcome to grid bot";
     // const hash = web3.metamask.utils.sha3(message);
     web3.metamask.eth.personal.sign(message, account).then((signature) => {
-      window.sessionStorage.setItem("signature", signature);
+      window.localStorage.setItem("signature", signature);
       window.location.reload();
     });
   };

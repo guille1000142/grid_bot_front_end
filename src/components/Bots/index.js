@@ -10,10 +10,13 @@ import {
   Select,
   MenuItem,
   Link,
+  Tabs,
+  Tab,
 } from "@mui/material";
 import { PhotoCamera } from "@mui/icons-material";
 import useMinter from "../../hooks/useMinter";
 import useNFTStorage from "../../hooks/useNFTStorage";
+import { btcMockAddress, ethMockAddress } from "../../utils/address";
 import { Warning } from "../Warning";
 import { SnackBar } from "../SnackBar";
 
@@ -90,7 +93,11 @@ const CreateBot = ({ account, contract, web3, switchNetwork, setList }) => {
 
   const handleChange = (e) => {
     e.preventDefault();
-    if (e.target.value.length < 11 || e.target.name === "pair") {
+    if (
+      e.target.value.length < 11 ||
+      e.target.name === "pair" ||
+      e.target.name === "description"
+    ) {
       setInput({
         ...input,
         [e.target.name]: e.target.value,
@@ -196,12 +203,8 @@ const CreateBot = ({ account, contract, web3, switchNetwork, setList }) => {
             autoWidth
             label="Pair"
           >
-            <MenuItem value={"0x8cdA7F95298418Bb6b5e424c1EEE4B18a0C1139C"}>
-              WBTC / USDC
-            </MenuItem>
-            <MenuItem value={"0x3c2fEc7E0b326C62688D8ee2119c8e26d668DF70"}>
-              WETH / USDC
-            </MenuItem>
+            <MenuItem value={btcMockAddress}>WBTC / USDC</MenuItem>
+            <MenuItem value={ethMockAddress}>WETH / USDC</MenuItem>
           </Select>
         </FormControl>
         <TextField
@@ -288,51 +291,52 @@ const CreateBot = ({ account, contract, web3, switchNetwork, setList }) => {
 };
 
 const ListBot = ({ account, contract, web3, bot, setBot }) => {
-  const { nftUserList, getUserNfts } = useNFTStorage(account);
+  const { nftUserList, getUserNfts } = useNFTStorage();
 
   useEffect(() => {
-    getUserNfts({ web3, contract, account, setBot });
+    getUserNfts({ web3, contract, owner: account, setBot });
   }, [web3, contract, account]);
 
-  return (
-    <List sx={{ padding: 0 }}>
-      {nftUserList && (
-        <>
-          <div className="divider"></div>
-          {nftUserList.map((nft, index) => {
-            return (
-              <div key={index}>
-                <div
-                  className={`data-container ${
-                    nft.botAddress === bot.botAddress ? "selected" : ""
-                  }`}
-                  onClick={() => setBot(nft)}
-                >
-                  <div className="nft-info">
-                    <img
-                      className="nft-image"
-                      src={`https://${nft.image}.ipfs.nftstorage.link/nft-image.avif`}
-                      alt="nft"
-                    />
-                    <h4>{nft.name}</h4>
-                  </div>
-
-                  <div className="bot-info">
-                    <h4>WBTC / USDC</h4>
-                    <div className="buy-sell">
-                      <span className="green">{nft.buyPrice}</span>
-                      <span>&nbsp;/&nbsp;</span>
-                      <span className="red">{nft.sellPrice}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="divider"></div>
+  return nftUserList ? (
+    <List sx={{ padding: 0, marginTop: 1.9 }}>
+      {nftUserList.map((nft, index) => {
+        return (
+          <div key={index}>
+            <div
+              className={`data-container ${
+                nft.botAddress === bot.botAddress ? "selected" : ""
+              }`}
+              onClick={() => setBot(nft)}
+            >
+              <div className="nft-info">
+                <img
+                  className="nft-image"
+                  src={`https://${nft.image}.ipfs.nftstorage.link/nft-image.avif`}
+                  alt="nft"
+                />
+                <h4>{nft.name}</h4>
               </div>
-            );
-          })}
-        </>
-      )}
+
+              <div className="bot-info">
+                <div className="buy-sell">
+                  {nft.pair === btcMockAddress && <h4>WBTC / USDC</h4>}
+                  {nft.pair === ethMockAddress && <h4>WETH / USDC</h4>}
+                </div>
+
+                <div className="buy-sell">
+                  <span className="green">{nft.buyPrice}</span>
+                  <span>&nbsp;/&nbsp;</span>
+                  <span className="red">{nft.sellPrice}</span>
+                </div>
+              </div>
+            </div>
+            <div className="divider-bot"></div>
+          </div>
+        );
+      })}
     </List>
+  ) : (
+    <Warning label={"MINT BOT"} />
   );
 };
 
@@ -344,23 +348,29 @@ export default function Bots({
   setBot,
   switchNetwork,
 }) {
-  const [list, setList] = useState(false);
+  const [list, setList] = useState("list");
+
+  const handleChange = (event, value) => {
+    setList(value);
+  };
 
   return (
     <>
       {account && contract && web3 ? (
         <>
-          <Button
-            onClick={() => setList(!list)}
-            variant="contained"
-            color={list ? "error" : "success"}
-            disableElevation
-            fullWidth
-          >
-            {list ? "GRID BOTS LIST" : "MINT GRID BOT"}
-          </Button>
+          <div className="bot-selector-trade">
+            <Tabs
+              sx={{ minWidth: "300px" }}
+              onChange={handleChange}
+              value={list}
+              aria-label="Tabs where each tab needs to be selected manually"
+            >
+              <Tab sx={{ minWidth: "150px" }} label="Bots" value="list" />
+              <Tab sx={{ minWidth: "150px" }} label="Mint Bot" value="mint" />
+            </Tabs>
+          </div>
 
-          {list ? (
+          {list === "mint" ? (
             <CreateBot
               account={account}
               contract={contract}
