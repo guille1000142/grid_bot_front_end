@@ -38,6 +38,7 @@ export default function NFTInfo({
   const [NFT, setNFT] = useState(false);
   const [allNFT, setAllNFT] = useState(false);
   const [expanded, setExpanded] = useState("details");
+  const [change, setChange] = useState(false);
 
   const handleChangeDetails = (event, value) => {
     setDetails(value);
@@ -49,7 +50,7 @@ export default function NFTInfo({
 
   useEffect(() => {
     getUserNfts({ owner, contract, setBot: [], web3 });
-  }, [item]);
+  }, [change]);
 
   useEffect(() => {
     selectedNft();
@@ -229,7 +230,7 @@ export default function NFTInfo({
               <div className="tools">
                 <div
                   style={{ cursor: "pointer" }}
-                  onClick={() => handleLike({ NFT, setNFT })}
+                  onClick={() => handleLike({ NFT, change, setChange })}
                 >
                   {NFT.isWallet ? <FavoriteIcon /> : <FavoriteBorderIcon />}
                 </div>

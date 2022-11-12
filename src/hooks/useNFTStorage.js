@@ -33,7 +33,8 @@ export default function useNFTStorage(account, contract) {
     return className;
   };
 
-  const handleLike = ({ NFT, setNFT }) => {
+  const handleLike = ({ NFT, setChange, change }) => {
+    console.log("like...");
     const jwt = generateAccessToken();
     if (!jwt) {
       return false;
@@ -41,10 +42,10 @@ export default function useNFTStorage(account, contract) {
 
     const api = `${process.env.REACT_APP_API_URL}/api/v1/nft/create`;
 
-    const newNFTData = {
-      likes: NFT.isWallet ? NFT.likes - 1 : NFT.likes + 1,
-      isWallet: NFT.isWallet ? false : true,
-    };
+    // const newNFTData = {
+    //   likes: NFT.isWallet ? NFT.likes - 1 : NFT.likes + 1,
+    //   isWallet: NFT.isWallet ? false : true,
+    // };
 
     return fetch(`${api}?cid=${NFT.cid}&wallet=${account}`, {
       method: "GET",
@@ -54,7 +55,7 @@ export default function useNFTStorage(account, contract) {
       },
     })
       .then((res) => {
-        setNFT({ ...NFT, ...newNFTData });
+        setChange(!change);
         return res;
       })
       .catch((err) => {
@@ -63,6 +64,7 @@ export default function useNFTStorage(account, contract) {
   };
 
   const getUserNfts = ({ contract, setBot, owner, web3 }) => {
+    console.log("fetching...");
     const jwt = generateAccessToken();
     if (!jwt) {
       return false;
