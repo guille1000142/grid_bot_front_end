@@ -91,7 +91,7 @@ export default function NFTInfo({
             </div>
             <img
               style={{ borderRadius: "20px" }}
-              src={`https://${NFT.image}.ipfs.nftstorage.link/nft-image.avif`}
+              src={`https://${NFT.image}.ipfs.nftstorage.link/blob`}
               alt=""
             />
             <Accordion
@@ -277,7 +277,7 @@ export default function NFTInfo({
                             ? "nft-image-mini bot-selected"
                             : "nft-image-mini"
                         }
-                        src={`https://${data.image}.ipfs.nftstorage.link/nft-image.avif`}
+                        src={`https://${data.image}.ipfs.nftstorage.link/blob`}
                         alt=""
                         width={32}
                         height={32}

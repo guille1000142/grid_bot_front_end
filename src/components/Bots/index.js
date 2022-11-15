@@ -233,7 +233,7 @@ const CreateBot = ({ account, contract, web3, switchNetwork, setList }) => {
             fullWidth
             type="submit"
             onClick={verifyData}
-            disabled={state === "MINTING..."}
+            disabled={state !== "MINT BOT AND NFT"}
           >
             {state}
           </Button>
@@ -311,7 +311,7 @@ const ListBot = ({ account, contract, web3, bot, setBot }) => {
               <div className="nft-info">
                 <img
                   className="nft-image"
-                  src={`https://${nft.image}.ipfs.nftstorage.link/nft-image.avif`}
+                  src={`https://${nft.image}.ipfs.nftstorage.link/blob`}
                   alt="nft"
                 />
                 <h4>{nft.name}</h4>

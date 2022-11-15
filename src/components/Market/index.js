@@ -97,7 +97,7 @@ export default function Market({ account, contract, web3 }) {
 
   const handleShare = async ({ NFT }) => {
     const response = await fetch(
-      `https://${NFT.image}.ipfs.nftstorage.link/nft-image.avif`
+      `https://${NFT.image}.ipfs.nftstorage.link/blob`
     );
     const blob = await response.blob();
     const filesArray = [
@@ -240,7 +240,7 @@ export default function Market({ account, contract, web3 }) {
                               >
                                 <img
                                   style={{ borderRadius: "20px" }}
-                                  src={`https://${nft.image}.ipfs.nftstorage.link/nft-image.avif`}
+                                  src={`https://${nft.image}.ipfs.nftstorage.link/blob`}
                                   alt=""
                                 />
                               </div>

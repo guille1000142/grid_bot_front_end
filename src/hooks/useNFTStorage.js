@@ -39,7 +39,7 @@ export default function useNFTStorage(account, contract) {
       return false;
     }
 
-    const write = `${process.env.REACT_APP_API_URL}/api/v1/nft/create`;
+    const write = `${process.env.REACT_APP_API_URL}/api/v1/nft/create?wallet=${account}`;
     const read = `${process.env.REACT_APP_API_URL}/api/v1/nft/metadata`;
 
     fetch(`${write}`, {
@@ -50,7 +50,6 @@ export default function useNFTStorage(account, contract) {
       },
       body: JSON.stringify({
         cid: NFT.cid,
-        wallet: [account],
       }),
     }).then(() => {
       Promise.all(
@@ -136,69 +135,58 @@ export default function useNFTStorage(account, contract) {
                         Authorization: `Bearer ${jwt}`,
                         "Content-Type": "application/json",
                       },
-                    }).then((res) => {
-                      return res.json().then((metadata) => {
-                        return contract.quickNode.usdcMock.methods
-                          .balanceOf(gridData[0])
-                          .call()
-                          .then((balance) => {
-                            const imageCid = getCidUrl(metadata.image);
-                            const { value, wallets } = metadata.likes;
-                            const isWallet = wallets.find(
-                              (wallet) => wallet === owner
-                            );
-                            return {
-                              // GRID DATA
-                              owner: owner,
-                              botAddress: gridData[0],
-                              id: gridData.nftID,
-                              buyPrice: parseInt(gridData.buyPrice) / 100000000,
-                              sellPrice:
-                                parseInt(gridData.sellPrice) / 100000000,
-                              pair: gridData[4],
-                              balance: parseFloat(
-                                web3.quickNode.utils.fromWei(balance, "ether")
-                              ),
-                              // NFT DATA
-                              cid: metadataCid[2],
-                              name: metadata.name,
-                              description: metadata.description,
-                              image: imageCid[2],
-                              likes: value,
-                              isWallet: isWallet !== undefined ? true : false,
-                            };
-                          });
-                      });
-                    });
+                    })
+                      .then((res) => {
+                        return res.json().then((metadata) => {
+                          return contract.quickNode.usdcMock.methods
+                            .balanceOf(gridData[0])
+                            .call()
+                            .then((balance) => {
+                              const imageCid = getCidUrl(metadata.image);
+                              const { value, wallets } = metadata.likes;
+                              const isWallet = wallets.find(
+                                (wallet) => wallet === owner
+                              );
+
+                              return {
+                                // GRID DATA
+                                owner: owner,
+                                botAddress: gridData[0],
+                                id: gridData.nftID,
+                                buyPrice:
+                                  parseInt(gridData.buyPrice) / 100000000,
+                                sellPrice:
+                                  parseInt(gridData.sellPrice) / 100000000,
+                                pair: gridData[4],
+                                balance: parseFloat(
+                                  web3.quickNode.utils.fromWei(balance, "ether")
+                                ),
+                                // NFT DATA
+                                cid: metadataCid[2],
+                                name: metadata.name,
+                                description: metadata.description,
+                                image: imageCid[2],
+                                likes: value,
+                                isWallet: isWallet !== undefined ? true : false,
+                              };
+                            });
+                        });
+                      })
+                      .catch((err) => console.log(err));
                   });
               });
           })
-        ).then((data) => {
-          if (setBot.length !== 0) {
-            setBot(data[0]);
-          }
-          setNftUserList(data);
-        });
-      });
+        )
+          .then((data) => {
+            if (setBot.length !== 0) {
+              setBot(data[0]);
+            }
+            setNftUserList(data);
+          })
+          .catch((err) => console.log(err));
+      })
+      .catch((err) => console.log(err));
   };
-
-  // const getGlobalNfts = () => {
-  //   const date = encodeURI(new Date().toISOString());
-  //   const limit = 1000;
-  //   const gateway = "https://api.nft.storage/";
-
-  //   fetch(`${gateway}?before=${date}&limit=${limit}`, {
-  //     method: "GET",
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //       Authorization: `Bearer ${process.env.REACT_APP_NFT_STORAGE_KEY}`,
-  //     },
-  //   }).then((res) => {
-  //     res.json().then((cids) => {
-  //       setCidsGlobalList(cids.value);
-  //     });
-  //   });
-  // };
 
   const getGlobalNfts = () => {
     if (!account || !contract) return false;
@@ -237,7 +225,7 @@ export default function useNFTStorage(account, contract) {
                       .tokenURI(gridData.nftID)
                       .call()
                       .then((uri) => {
-                        if (uri === "patito") return false;
+                        if (uri === "asd") return false;
                         const metadataCid = getCidUrl(uri);
                         return fetch(`${api}/${metadataCid[2]}`, {
                           method: "GET",
@@ -272,14 +260,19 @@ export default function useNFTStorage(account, contract) {
                             };
                           });
                         });
-                      });
-                  });
+                      })
+                      .catch((err) => console.log(err));
+                  })
+                  .catch((err) => console.log(err));
               });
-          });
+          })
+          .catch((err) => console.log(err));
       })
-    ).then((nfts) => {
-      setNftGlobalList([...actualData, ...nfts]);
-    });
+    )
+      .then((nfts) => {
+        setNftGlobalList([...actualData, ...nfts]);
+      })
+      .catch((err) => console.log(err));
   };
 
   return {

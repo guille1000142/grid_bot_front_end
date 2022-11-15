@@ -235,7 +235,7 @@ export default function Control({
               <h3>{bot.name}</h3>
               <img
                 className="nft-profile-image"
-                src={`https://${bot.image}.ipfs.nftstorage.link/nft-image.avif`}
+                src={`https://${bot.image}.ipfs.nftstorage.link/blob`}
                 alt="nft"
               />
               &nbsp;
@@ -367,7 +367,7 @@ export default function Control({
       )}
 
       {bot && !data && <Loader />}
-      {!bot && <Warning label={"MINT BOT"} />}
+      {!bot && account && <Warning label={"MINT BOT"} />}
     </>
   );
 }

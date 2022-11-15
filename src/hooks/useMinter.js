@@ -1,11 +1,5 @@
 import { useState } from "react";
-import { NFTStorage } from "nft.storage";
-import b64toBlob from "b64-to-blob";
 import { createSigner } from "fast-jwt";
-
-const client = new NFTStorage({
-  token: process.env.REACT_APP_NFT_STORAGE_KEY,
-});
 
 export default function useMinter() {
   const [image, setImage] = useState({ file: "", width: "", height: "" });
@@ -53,45 +47,62 @@ export default function useMinter() {
         };
       }
     }
-    return JSON.stringify(dimensions);
+    return dimensions;
   };
 
-  const resizeImage = () => {
+  // const resizeImage = (account) => {
+  //   const jwt = generateAccessToken();
+  //   if (!jwt) {
+  //     return false;
+  //   }
+
+  //   const converter = `${process.env.REACT_APP_API_URL}/api/v1/converter/image?wallet=${account}`;
+  //   const dimensions = calculateDimensions();
+  //   const { file } = image;
+
+  //   const formData = new FormData();
+  //   formData.append("image", file, file.name);
+  //   formData.append("dimensions", dimensions);
+
+  //   return fetch(converter, {
+  //     method: "POST",
+  //     headers: {
+  //       Authorization: `Bearer ${jwt}`,
+  //     },
+  //     body: formData,
+  //   }).then((res) => {
+  //     return res.json().then((data) => {
+  //       return data;
+  //     });
+  //   });
+  // };
+
+  const uploadMetadataNFT = () => {
     const jwt = generateAccessToken();
     if (!jwt) {
       return false;
     }
-
-    const api = `${process.env.REACT_APP_API_URL}/api/v1/converter/image`;
-    const dimensions = calculateDimensions();
+    const upload = `${process.env.REACT_APP_API_URL}/api/v1/nft/upload`;
     const { file } = image;
-
+    const { width, height } = calculateDimensions();
+    const { name, description } = input;
     const formData = new FormData();
     formData.append("image", file, file.name);
-    formData.append("dimensions", dimensions);
-    console.log(jwt);
-    return fetch(api, {
+    formData.append(
+      "data",
+      JSON.stringify({ width, height, name, description })
+    );
+
+    return fetch(upload, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${jwt}`,
       },
       body: formData,
     }).then((res) => {
-      return res.json().then((data) => {
-        const blob = b64toBlob(data.b64Data, data.contentType);
-        const imageFile = new File([blob], "nft-image.avif", {
-          type: "image/avif",
-        });
-        return imageFile;
+      return res.json().then((tokenUri) => {
+        return tokenUri;
       });
-    });
-  };
-
-  const uploadMetadataNFT = (imageFile) => {
-    return client.store({
-      name: input.name,
-      description: input.description,
-      image: imageFile,
     });
   };
 
@@ -101,14 +112,17 @@ export default function useMinter() {
       return false;
     }
 
-    const api = `${process.env.REACT_APP_API_URL}/api/v1/nft/create`;
+    const write = `${process.env.REACT_APP_API_URL}/api/v1/nft/create?wallet=${account}`;
 
-    return fetch(`${api}?cid=${tokenUri.ipnft}&wallet=${account}`, {
-      method: "GET",
+    return fetch(write, {
+      method: "PUT",
       headers: {
         Authorization: `Bearer ${jwt}`,
         "Content-Type": "application/json",
       },
+      body: JSON.stringify({
+        cid: tokenUri.ipnft,
+      }),
     })
       .then((res) => {
         return res;
@@ -130,7 +144,7 @@ export default function useMinter() {
       )
       .send({
         from: account,
-        value: web3.quickNode.utils.toWei("0.01", "ether"),
+        value: web3.quickNode.utils.toWei("0.02", "ether"),
         // gasPrice: web3.utils.toWei(gas.fastest.toString(), "gwei"),
         // gasLimit: 500000,
       })
@@ -168,14 +182,12 @@ export default function useMinter() {
   };
 
   const mintBot = (web3, account, contract, setList) => {
-    setState("MINTING...");
-    resizeImage()
-      .then((imageFile) => {
-        uploadMetadataNFT(imageFile).then((tokenUri) => {
-          createDbDoc(tokenUri, account).then(() =>
-            sendTransaction(web3, account, contract, tokenUri, setList)
-          );
-        });
+    setState("UPLOADING...");
+    uploadMetadataNFT()
+      .then((tokenUri) => {
+        setState("MINTING...");
+        createDbDoc(tokenUri, account);
+        sendTransaction(web3, account, contract, tokenUri, setList);
       })
       .catch((error) => console.error(error));
   };
