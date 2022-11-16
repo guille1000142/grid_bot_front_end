@@ -141,6 +141,7 @@ export default function useNFTStorage(account, contract) {
                     })
                       .then((res) => {
                         return res.json().then((metadata) => {
+                          if (!metadata) return false;
                           return contract.quickNode.usdcMock.methods
                             .balanceOf(gridData[0])
                             .call()
@@ -178,16 +179,20 @@ export default function useNFTStorage(account, contract) {
                             });
                         });
                       })
-                      .catch((err) => console.log(err));
+                      .catch((err) => {
+                        console.log(err);
+                        return false;
+                      });
                   });
               });
           })
         )
           .then((data) => {
+            const filter = data.filter(Boolean);
             if (setBot.length !== 0) {
               setBot(data[0]);
             }
-            setNftUserList(data);
+            setNftUserList(filter.length === 0 ? false : filter);
           })
           .catch((err) => console.log(err));
       })
