@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createSigner } from "fast-jwt";
+import { BigNumber } from "bignumber.js";
 
 export default function useMinter() {
   const [image, setImage] = useState({ file: "", width: "", height: "" });
@@ -133,13 +134,19 @@ export default function useMinter() {
   };
 
   const sendTransaction = (web3, account, contract, tokenUri, setList) => {
+    const buyConvert = new BigNumber(parseInt(input.buyPrice) * 100000000);
+    const buyPrice = web3.quickNode.utils.toBN(buyConvert).toString();
+
+    const sellConvert = new BigNumber(parseInt(input.sellPrice) * 100000000);
+    const sellPrice = web3.quickNode.utils.toBN(sellConvert).toString();
+
     contract.metamask.gridBotFactory.methods
       .factoryNewGrid(
         input.name,
         tokenUri.url,
         input.pair,
-        parseFloat(input.buyPrice) * 100000000,
-        parseFloat(input.sellPrice) * 100000000,
+        buyPrice,
+        sellPrice,
         account
       )
       .send({

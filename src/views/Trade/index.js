@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import NavBar from "../../components/NavBar";
 import Bots from "../../components/Bots";
 import Chart from "../../components/Chart";
@@ -12,12 +12,18 @@ export default function Trade() {
     account,
     contract,
     web3,
-    readBotContract,
+    bot,
+    botContract,
+    setBot,
     readBalance,
     connectWallet,
     switchNetwork,
   } = useWeb3();
-  const [bot, setBot] = useState(false);
+
+  useEffect(() => {
+    setBot(undefined);
+  }, [account]);
+
   return (
     <div className="trade-grid-container">
       <header className="header">
@@ -42,6 +48,7 @@ export default function Trade() {
           contract={contract}
           web3={web3}
           bot={bot}
+          botContract={botContract}
         />
       </article>
       <aside className="control">
@@ -50,7 +57,7 @@ export default function Trade() {
           contract={contract}
           web3={web3}
           bot={bot}
-          readBotContract={readBotContract}
+          botContract={botContract}
           readBalance={readBalance}
           switchNetwork={switchNetwork}
         />

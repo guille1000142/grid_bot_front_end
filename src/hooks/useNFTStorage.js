@@ -116,7 +116,10 @@ export default function useNFTStorage(account, contract) {
       .getTotalNumberOfGrid(owner)
       .call()
       .then((amount) => {
-        if (amount === "0") return false;
+        if (amount === "0") {
+          setBot(false);
+          return false;
+        }
         const bots = Array.apply(null, Array(parseInt(amount)));
         Promise.all(
           bots.map((noData, index) => {
@@ -143,6 +146,9 @@ export default function useNFTStorage(account, contract) {
                             .call()
                             .then((balance) => {
                               const imageCid = getCidUrl(metadata.image);
+                              if (!metadata.likes) {
+                                return false;
+                              }
                               const { value, wallets } = metadata.likes;
                               const isWallet = wallets.find(
                                 (wallet) => wallet === owner

@@ -184,6 +184,11 @@
   grid-area: nft;
 }
 
+.nft-view img {
+  height: 400px;
+  object-fit: cover;
+}
+
 .bot-view {
   background-color: #0c163a;
   padding: 15px;
@@ -197,12 +202,6 @@
   display: flex;
   justify-content: space-between;
   margin-bottom: 10px;
-}
-
-.nft-view-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 
 .nft-details {

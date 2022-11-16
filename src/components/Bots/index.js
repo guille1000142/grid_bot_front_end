@@ -96,7 +96,9 @@ const CreateBot = ({ account, contract, web3, switchNetwork, setList }) => {
     if (
       e.target.value.length < 11 ||
       e.target.name === "pair" ||
-      e.target.name === "description"
+      e.target.name === "description" ||
+      e.target.name === "buyPrice" ||
+      e.target.name === "sellPrice"
     ) {
       setInput({
         ...input,
@@ -290,12 +292,13 @@ const CreateBot = ({ account, contract, web3, switchNetwork, setList }) => {
   );
 };
 
-const ListBot = ({ account, contract, web3, bot, setBot }) => {
+const ListBot = ({ web3, contract, account, bot, setBot }) => {
   const { nftUserList, getUserNfts } = useNFTStorage();
 
   useEffect(() => {
-    getUserNfts({ web3, contract, owner: account, setBot });
-  }, [web3, contract, account]);
+    if (web3 && contract && web3)
+      getUserNfts({ web3, contract, owner: account, setBot });
+  }, [account]);
 
   return nftUserList ? (
     <List sx={{ padding: 0, marginTop: 1.9 }}>
@@ -350,6 +353,10 @@ export default function Bots({
 }) {
   const [list, setList] = useState("bot");
 
+  useEffect(() => {
+    bot === false ? setList("mint") : setList("bot");
+  }, [bot, account]);
+
   const handleChange = (event, value) => {
     setList(value);
   };
@@ -380,9 +387,9 @@ export default function Bots({
             />
           ) : (
             <ListBot
-              account={account}
-              contract={contract}
               web3={web3}
+              contract={contract}
+              account={account}
               bot={bot}
               setBot={setBot}
             />

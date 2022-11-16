@@ -10,6 +10,8 @@ import {
   NFTGridDataAddress,
   UpKeepIDRegisterFactoryAddress,
   usdcMockAddress,
+  btcMockAddress,
+  ethMockAddress,
 } from "../utils/address";
 import { mumbai, quickNodeRPC } from "../utils/network";
 import useNetwork from "./useNetwork";
@@ -19,6 +21,8 @@ export default function useWeb3() {
   const [account, setAccount] = useState(false);
   const [network, setNetwork] = useState(false);
   const [balance, setBalance] = useState(0);
+  const [bot, setBot] = useState(undefined);
+  const [botContract, setBotContract] = useState(0);
   const [web3, setWeb3] = useState(false);
   const [contract, setContract] = useState(false);
   const { changeNetwork } = useNetwork();
@@ -105,6 +109,16 @@ export default function useWeb3() {
       usdcMockAddress
     );
 
+    const btcMockM = new metamask.eth.Contract(
+      ERC20StandardAbi,
+      btcMockAddress
+    );
+
+    const ethMockM = new metamask.eth.Contract(
+      ERC20StandardAbi,
+      ethMockAddress
+    );
+
     const gridBotFactoryQ = new quickNode.eth.Contract(
       JSON.parse(GridBotFactoryAbi.result),
       GridBotFactoryAddress
@@ -125,18 +139,32 @@ export default function useWeb3() {
       usdcMockAddress
     );
 
+    const btcMockQ = new metamask.eth.Contract(
+      ERC20StandardAbi,
+      btcMockAddress
+    );
+
+    const ethMockQ = new metamask.eth.Contract(
+      ERC20StandardAbi,
+      ethMockAddress
+    );
+
     setContract({
       metamask: {
         gridBotFactory: gridBotFactoryM,
         nftGridData: nftGridDataM,
         upKeepIDRegisterFactory: upKeepIDRegisterFactoryM,
         usdcMock: usdcMockM,
+        btcMock: btcMockM,
+        ethMock: ethMockM,
       },
       quickNode: {
         gridBotFactory: gridBotFactoryQ,
         nftGridData: nftGridDataQ,
         upKeepIDRegisterFactory: upKeepIDRegisterFactoryQ,
         usdcMock: usdcMockQ,
+        btcMock: btcMockQ,
+        ethMock: ethMockQ,
       },
     });
   };
@@ -149,19 +177,25 @@ export default function useWeb3() {
     return truncatedNum / multiplier;
   };
 
-  const readBotContract = (address) => {
+  useEffect(() => {
+    if (bot) {
+      readBotContract();
+    }
+  }, [bot]);
+
+  const readBotContract = () => {
     const spotBotGridM = new web3.metamask.eth.Contract(
       SpotBotGridAbi.abi,
-      address
+      bot.botAddress
     );
     const spotBotGridQ = new web3.quickNode.eth.Contract(
       SpotBotGridAbi.abi,
-      address
+      bot.botAddress
     );
-    return {
+    setBotContract({
       metamask: { spotBotGrid: spotBotGridM },
       quickNode: { spotBotGrid: spotBotGridQ },
-    };
+    });
   };
 
   const readBalance = async () => {
@@ -221,13 +255,15 @@ export default function useWeb3() {
   return {
     changeNetwork,
     connectWallet,
-    readBotContract,
     readBalance,
     switchNetwork,
+    setBot,
+    bot,
     account,
     balance,
     web3,
     contract,
     maticPrice,
+    botContract,
   };
 }

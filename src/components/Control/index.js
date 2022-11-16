@@ -9,7 +9,7 @@ export default function Control({
   contract,
   web3,
   bot,
-  readBotContract,
+  botContract,
   readBalance,
   switchNetwork,
 }) {
@@ -18,33 +18,51 @@ export default function Control({
   const [tx, setTx] = useState(false);
   const [data, setData] = useState(false);
   const [addBalance, setAddBalance] = useState(0);
-  const [botContract, setBotContract] = useState(false);
   const [withdraw, setWithdraw] = useState(false);
   const [deposit, setDeposit] = useState({ approve: false, deposit: false });
 
   useEffect(() => {
-    if (bot && web3) {
+    if (bot && botContract && web3 && account) {
       getBotData();
+    } else {
+      setData(false);
     }
-  }, [bot, web3, state]);
+  }, [bot, botContract, web3, state, account]);
+
+  const truncateDecimals = function (number, digits) {
+    var multiplier = Math.pow(10, digits),
+      adjustedNum = number * multiplier,
+      truncatedNum = Math[adjustedNum < 0 ? "ceil" : "floor"](adjustedNum);
+
+    return truncatedNum / multiplier;
+  };
 
   const getBotData = async () => {
     setData(false);
-    const spotContract = readBotContract(bot.botAddress);
-    setBotContract(spotContract);
 
-    const usdcBalance = web3.quickNode.utils.fromWei(
-      await spotContract.quickNode.spotBotGrid.methods
-        .getBalanceStable()
-        .call(),
-      "ether"
+    const usdcBalance = truncateDecimals(
+      parseFloat(
+        web3.quickNode.utils.fromWei(
+          await botContract.quickNode.spotBotGrid.methods
+            .getBalanceStable()
+            .call(),
+          "ether"
+        )
+      ),
+      4
     );
-    const pairBalance = web3.quickNode.utils.fromWei(
-      await spotContract.quickNode.spotBotGrid.methods
-        .getBalanceTradeableToken()
-        .call(),
-      "ether"
+    const pairBalance = truncateDecimals(
+      parseFloat(
+        web3.quickNode.utils.fromWei(
+          await botContract.quickNode.spotBotGrid.methods
+            .getBalanceTradeableToken()
+            .call(),
+          "ether"
+        )
+      ),
+      4
     );
+
     const walletBalance = await readBalance();
     const allowance = await contract.quickNode.usdcMock.methods
       .allowance(account, bot.botAddress)
@@ -184,6 +202,7 @@ export default function Control({
       })
       .on("receipt", (receipt) => {
         setWithdraw(false);
+        setTx({ withdraw: receipt });
         setState(!state);
       })
       .on("error", (err, receipt) => {
@@ -248,11 +267,11 @@ export default function Control({
                   {data.bot.usdc > 0 ? "RUNNING" : "STOPPED"}
                 </span>
               </div>
-              <div className="balance">
+              {/* <div className="balance">
                 <span>Gas:</span>
                 <span className="bold">{data.bot.pair} LINK</span>
-              </div>
-              <div className="divider-control"></div>
+              </div> */}
+              {/* <div className="divider-control"></div> */}
               <div className="balance">
                 <span>Available balance:</span>
                 <span className="bold">{data.bot.usdc} USDC</span>
@@ -344,9 +363,9 @@ export default function Control({
                       <Link
                         underline="hover"
                         href={`https://mumbai.polygonscan.com/tx/${
-                          tx.withdraw
-                            ? tx.withdraw.transactionHash
-                            : tx.deposit.transactionHash
+                          (tx.approve && tx.approve.transactionHash) ||
+                          (tx.deposit && tx.deposit.transactionHash) ||
+                          (tx.withdraw && tx.withdraw.transactionHash)
                         }`}
                         target="_blank"
                         rel="noopener"

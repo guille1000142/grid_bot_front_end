@@ -77,6 +77,18 @@ body::-webkit-scrollbar-thumb {
   color: #ce0000;
 }
 
+.green-dark {
+  color: #2e7e009f;
+}
+
+.red-dark {
+  color: #7700009f;
+}
+
+.white-light {
+  background-color: #9e9e9e5b;
+}
+
 .bot-selector {
   display: flex;
   justify-content: center;

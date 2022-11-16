@@ -1,16 +1,19 @@
 .control::-webkit-scrollbar,
+.table::-webkit-scrollbar,
 .transactions::-webkit-scrollbar,
 .bots::-webkit-scrollbar {
   width: 10px;
 }
 
 .control::-webkit-scrollbar-track,
+.table::-webkit-scrollbar-track,
 .transactions::-webkit-scrollbar-track,
 .bots::-webkit-scrollbar-track {
   background: #0c163a;
 }
 
 .control::-webkit-scrollbar-thumb,
+.table::-webkit-scrollbar-thumb,
 .transactions::-webkit-scrollbar-thumb,
 .bots::-webkit-scrollbar-thumb {
   background-color: #ffffff;
