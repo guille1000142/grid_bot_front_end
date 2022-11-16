@@ -85,6 +85,9 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   },
 }));
 
+TimeAgo.addDefaultLocale(en);
+const timeAgo = new TimeAgo("en-US");
+
 export default function Transactions({
   account,
   contract,
@@ -93,9 +96,6 @@ export default function Transactions({
   botContract,
 }) {
   const [events, setEvents] = useState(false);
-
-  TimeAgo.addDefaultLocale(en);
-  const timeAgo = new TimeAgo("en-US");
 
   const rows =
     events &&

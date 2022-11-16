@@ -48,7 +48,7 @@ export default function NFTInfo({
   };
 
   useEffect(() => {
-    getUserNfts({ owner, contract, setBot: [], web3 });
+    getUserNfts({ owner, contract, web3 });
   }, []);
 
   useEffect(() => {
@@ -267,6 +267,7 @@ export default function NFTInfo({
                 {nftUserList.map((data, index) => {
                   return (
                     <div
+                      key={index}
                       className="item-preview"
                       onClick={() => setItem(data.id)}
                     >

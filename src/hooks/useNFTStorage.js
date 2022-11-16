@@ -104,7 +104,7 @@ export default function useNFTStorage(account, contract) {
     });
   };
 
-  const getUserNfts = ({ contract, setBot, owner, web3 }) => {
+  const getUserNfts = ({ contract, setBot = false, owner, web3 }) => {
     const jwt = generateAccessToken();
     if (!jwt) {
       return false;
@@ -117,7 +117,7 @@ export default function useNFTStorage(account, contract) {
       .call()
       .then((amount) => {
         if (amount === "0") {
-          setBot(false);
+          setBot && setBot(false);
           return false;
         }
         const bots = Array.apply(null, Array(parseInt(amount)));
@@ -141,15 +141,12 @@ export default function useNFTStorage(account, contract) {
                     })
                       .then((res) => {
                         return res.json().then((metadata) => {
-                          if (!metadata) return false;
+                          if (!metadata || !metadata.likes) return false;
                           return contract.quickNode.usdcMock.methods
                             .balanceOf(gridData[0])
                             .call()
                             .then((balance) => {
                               const imageCid = getCidUrl(metadata.image);
-                              if (!metadata.likes) {
-                                return false;
-                              }
                               const { value, wallets } = metadata.likes;
                               const isWallet = wallets.find(
                                 (wallet) => wallet === owner
@@ -180,7 +177,7 @@ export default function useNFTStorage(account, contract) {
                         });
                       })
                       .catch((err) => {
-                        console.log(err);
+                        console.error(err);
                         return false;
                       });
                   });
@@ -189,14 +186,12 @@ export default function useNFTStorage(account, contract) {
         )
           .then((data) => {
             const filter = data.filter(Boolean);
-            if (setBot.length !== 0) {
-              setBot(data[0]);
-            }
+            setBot && setBot(filter.length === 0 ? false : filter[0]);
             setNftUserList(filter.length === 0 ? false : filter);
           })
-          .catch((err) => console.log(err));
+          .catch((err) => console.error(err));
       })
-      .catch((err) => console.log(err));
+      .catch((err) => console.error(err));
   };
 
   const getGlobalNfts = () => {
@@ -246,6 +241,7 @@ export default function useNFTStorage(account, contract) {
                           },
                         }).then((res) => {
                           return res.json().then((metadata) => {
+                            if (!metadata || !metadata.likes) return false;
                             const position = randomPosition(3);
                             const imageCid = getCidUrl(metadata.image);
                             const { value, wallets } = metadata.likes;
@@ -272,18 +268,18 @@ export default function useNFTStorage(account, contract) {
                           });
                         });
                       })
-                      .catch((err) => console.log(err));
+                      .catch((err) => console.error(err));
                   })
-                  .catch((err) => console.log(err));
+                  .catch((err) => console.error(err));
               });
           })
-          .catch((err) => console.log(err));
+          .catch((err) => console.error(err));
       })
     )
       .then((nfts) => {
         setNftGlobalList([...actualData, ...nfts]);
       })
-      .catch((err) => console.log(err));
+      .catch((err) => console.error(err));
   };
 
   return {
