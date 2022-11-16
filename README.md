@@ -12,13 +12,13 @@
 1. Clone the repository
 
    ```sh
-    git clone https://github.com/your_username_/Project-Name.git
+    git clone https://github.com/guille1000142/grid_bot.git
    ```
 
 2. Change directory
 
    ```sh
-    cd grid_bot_api
+    cd grid_bot
    ```
 
 3. Install NPM packages
