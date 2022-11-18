@@ -77,7 +77,7 @@ export default function useNFTStorage(account, contract) {
           }).then((res) => {
             return res.json().then((metadata) => {
               const { value, wallets } = metadata.likes;
-              const isWallet = wallets.find((wallet) => wallet === owner);
+              const isWallet = wallets.find((wallet) => wallet === account);
               return {
                 // GRID DATA
                 owner,
@@ -149,7 +149,7 @@ export default function useNFTStorage(account, contract) {
                               const imageCid = getCidUrl(metadata.image);
                               const { value, wallets } = metadata.likes;
                               const isWallet = wallets.find(
-                                (wallet) => wallet === owner
+                                (wallet) => wallet === account
                               );
 
                               return {
@@ -241,6 +241,7 @@ export default function useNFTStorage(account, contract) {
                           },
                         }).then((res) => {
                           return res.json().then((metadata) => {
+                            console.log(metadata);
                             if (!metadata || !metadata.likes) return false;
                             const position = randomPosition(3);
                             const imageCid = getCidUrl(metadata.image);
