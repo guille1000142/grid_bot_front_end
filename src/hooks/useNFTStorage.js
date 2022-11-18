@@ -241,7 +241,6 @@ export default function useNFTStorage(account, contract) {
                           },
                         }).then((res) => {
                           return res.json().then((metadata) => {
-                            console.log(metadata);
                             if (!metadata || !metadata.likes) return false;
                             const position = randomPosition(3);
                             const imageCid = getCidUrl(metadata.image);
